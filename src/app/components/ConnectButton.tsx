@@ -3,6 +3,7 @@
 import { usePrivy } from '@privy-io/react-auth';
 import { useAccount, useConnect, useDisconnect, useBalance } from 'wagmi';
 import { injected } from 'wagmi/connectors';
+import { formatUnits } from 'viem';
 
 export function ConnectButton() {
   const { login, logout, authenticated, user } = usePrivy();
@@ -11,8 +12,9 @@ export function ConnectButton() {
   const { disconnect } = useDisconnect();
   const { data: balance } = useBalance({ address });
 
+  // wagmi v3 returns value as bigint — format manually
   const formattedBalance = balance
-    ? parseFloat(balance.formatted).toFixed(4)
+    ? parseFloat(formatUnits(balance.value, balance.decimals)).toFixed(4)
     : '0.0000';
 
   const shortAddress = (addr: string) =>
@@ -46,7 +48,6 @@ export function ConnectButton() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontFamily: "'Press Start 2P', monospace",
       }}
     >
       ✕
@@ -74,7 +75,7 @@ export function ConnectButton() {
     );
   }
 
-  // Connected via Privy (Abstract Global Wallet / social login)
+  // Connected via Privy
   if (authenticated && user) {
     const privyAddr = user.wallet?.address ?? '';
     return (
@@ -96,7 +97,7 @@ export function ConnectButton() {
     );
   }
 
-  // Not connected — show both options
+  // Not connected
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
       <button
