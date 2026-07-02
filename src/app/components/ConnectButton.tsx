@@ -5,9 +5,10 @@ import { useAccount, useConnect, useDisconnect, useBalance } from 'wagmi';
 import { injected } from 'wagmi/connectors';
 import { formatUnits } from 'viem';
 import { useAbstractClient } from '@abstract-foundation/agw-react';
+import { abstractWalletConnector } from '@abstract-foundation/agw-react/connectors';
 
 export function ConnectButton() {
-  const { login, logout, authenticated, user } = usePrivy();
+  const { login, logout, authenticated } = usePrivy();
   const { address, isConnected, connector } = useAccount();
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
@@ -21,14 +22,14 @@ export function ConnectButton() {
   const shortAddress = (addr: string) =>
     `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
-  const isAGW = connector?.id === 'agw' || !!agwClient;
+  const isAGW = connector?.id === 'abstract' || !!agwClient;
 
-  // ── Connected state ─────────────────────────────────────────
+  // ── Connected ────────────────────────────────────────────────
   if (isConnected && address) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
 
-        {/* ETH Balance */}
+        {/* Balance */}
         <div style={{
           background: '#0f5422',
           border: '2px solid #44FF44',
@@ -41,7 +42,7 @@ export function ConnectButton() {
           ⬡ {formattedBalance} ETH
         </div>
 
-        {/* Address + wallet type badge */}
+        {/* Address */}
         <div style={{
           background: '#0d4a1e',
           border: '2px solid #44FF44',
@@ -61,7 +62,6 @@ export function ConnectButton() {
               color: '#1BF26A',
               border: '1px solid #1BF26A',
               padding: '2px 4px',
-              marginLeft: '4px',
             }}>
               AGW
             </span>
@@ -70,45 +70,7 @@ export function ConnectButton() {
 
         {/* Disconnect */}
         <button
-          onClick={() => {
-            disconnect();
-            if (authenticated) logout();
-          }}
-          style={{
-            width: '38px',
-            height: '38px',
-            background: '#2a0808',
-            border: '2px solid #FF4444',
-            color: '#FF4444',
-            cursor: 'pointer',
-            fontSize: '14px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          ✕
-        </button>
-      </div>
-    );
-  }
-
-  // ── Privy authenticated but no wagmi connection yet ──────────
-  if (authenticated && user && !isConnected) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <div style={{
-          background: '#0d4a1e',
-          border: '2px solid #44FF44',
-          color: '#44FF44',
-          padding: '8px 12px',
-          fontSize: '10px',
-          fontFamily: "'Press Start 2P', monospace",
-        }}>
-          ✓ LOGGED IN
-        </div>
-        <button
-          onClick={() => logout()}
+          onClick={() => { disconnect(); if (authenticated) logout(); }}
           style={{
             width: '38px',
             height: '38px',
@@ -132,9 +94,9 @@ export function ConnectButton() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
 
-      {/* Primary: Abstract Global Wallet via Privy */}
+      {/* Primary: Abstract Global Wallet */}
       <button
-        onClick={() => login()}
+        onClick={() => connect({ connector: abstractWalletConnector() })}
         style={{
           background: '#0d4a1e',
           border: '2px solid #1BF26A',
@@ -150,7 +112,7 @@ export function ConnectButton() {
         ⚡ CONNECT
       </button>
 
-      {/* Secondary: Injected wallet (MetaMask / Rabby) */}
+      {/* Secondary: Injected (MetaMask / Rabby) */}
       <button
         onClick={() => connect({ connector: injected() })}
         style={{
@@ -163,7 +125,7 @@ export function ConnectButton() {
           fontFamily: "'Press Start 2P', monospace",
           whiteSpace: 'nowrap',
         }}
-        title="Connect with MetaMask or Rabby"
+        title="MetaMask / Rabby"
       >
         🦊
       </button>
