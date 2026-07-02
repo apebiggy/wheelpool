@@ -1,15 +1,20 @@
 'use client';
 
 import { PrivyProvider } from '@privy-io/react-auth';
-import { WagmiProvider, createConfig } from '@privy-io/wagmi';
+import { WagmiProvider } from '@privy-io/wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http } from 'viem';
 import { abstractTestnet } from 'viem/chains';
 import { injected } from 'wagmi/connectors';
+import { createConfig } from '@privy-io/wagmi';
+import { toPrivyWalletConnector } from '@abstract-foundation/agw-react/connectors';
 
 const config = createConfig({
   chains: [abstractTestnet],
-  connectors: [injected()],
+  connectors: [
+    toPrivyWalletConnector(),  // AGW as primary
+    injected(),                 // MetaMask / Rabby as fallback
+  ],
   transports: {
     [abstractTestnet.id]: http(),
   },
