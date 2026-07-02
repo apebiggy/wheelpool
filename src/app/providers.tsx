@@ -25,7 +25,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         defaultChain: abstractTestnet,
         supportedChains: [abstractTestnet],
         embeddedWallets: {
-          createOnLogin: 'users-without-wallets',
+          ethereum: {
+            createOnLogin: 'users-without-wallets',
+          },
         },
         appearance: {
           theme: 'dark',
