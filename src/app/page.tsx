@@ -1,65 +1,163 @@
-import Image from "next/image";
+import { ConnectButton } from './components/ConnectButton';
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main style={{
+      minHeight: '100vh',
+      background: '#0d4a1e',
+      fontFamily: "'Press Start 2P', monospace",
+      color: '#fff',
+    }}>
+
+      {/* HEADER */}
+      <header style={{
+        background: 'rgba(12,60,24,.98)',
+        borderBottom: '3px solid #1BF26A',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+      }}>
+        {/* Row 1: Logo + Connect */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 20px',
+          gap: '8px',
+        }}>
+          {/* Left spacer */}
+          <div style={{ flex: 1 }} />
+
+          {/* Center: Logo */}
+          <div style={{
+            flexShrink: 0,
+            fontSize: 'clamp(18px, 3.8vw, 36px)',
+            letterSpacing: 2,
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+            textAlign: 'center',
+          }}>
+            <span style={{ color: '#FFDD00' }}>Wheel</span>
+            <span style={{ color: '#44FF44' }}>Pool</span>
+          </div>
+
+          {/* Right: Connect Button */}
+          <div style={{
+            flex: 1,
+            display: 'flex',
+            justifyContent: 'flex-end',
+          }}>
+            <ConnectButton />
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Row 2: Nav */}
+        <nav style={{
+          display: 'flex',
+          borderTop: '1px solid rgba(27,242,106,.22)',
+          background: 'rgba(8,50,8,.6)',
+        }}>
+          {[
+            ['pools', '🎡 POOLS'],
+            ['tickets', '🎟 TICKETS'],
+            ['how', '📖 HOW'],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              style={{
+                flex: 1,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#9de8b4',
+                padding: '10px 4px',
+                fontFamily: "'Press Start 2P', monospace",
+                fontSize: 'clamp(8px, 2.8vw, 14px)',
+                letterSpacing: 1,
+                borderBottom: '3px solid transparent',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+      </header>
+
+      {/* HERO */}
+      <section style={{
+        textAlign: 'center',
+        padding: '80px 20px',
+      }}>
+        <h1 style={{
+          fontSize: 'clamp(24px, 5vw, 48px)',
+          color: '#FFDD00',
+          marginBottom: '20px',
+          letterSpacing: 3,
+        }}>
+          WIN ETH ON{' '}
+          <span style={{ color: '#1BF26A' }}>ABSTRACT CHAIN</span>
+        </h1>
+        <p style={{
+          fontSize: 'clamp(10px, 2vw, 14px)',
+          color: '#9de8b4',
+          marginBottom: '40px',
+          lineHeight: 2,
+        }}>
+          Mint NFT tickets · Auto draw · Instant payouts · Zero gas for winners
+        </p>
+
+        {/* Pool cards placeholder */}
+        <div style={{
+          display: 'flex',
+          gap: '16px',
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          marginTop: '40px',
+        }}>
+          {[
+            { name: 'SPIN',   price: '$2',  schedule: 'EVERY HOUR',     color: '#FF6633' },
+            { name: 'SURGE',  price: '$5',  schedule: 'EVERY 6 HOURS',  color: '#00DDAA' },
+            { name: 'TWELVE', price: '$10', schedule: 'EVERY 12 HOURS', color: '#AA44FF' },
+            { name: 'MEGA',   price: '$25', schedule: 'DAILY',          color: '#FFDD00' },
+          ].map((pool) => (
+            <div
+              key={pool.name}
+              style={{
+                background: '#145414',
+                border: `2px solid ${pool.color}`,
+                padding: '24px',
+                minWidth: '200px',
+                textAlign: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <div style={{
+                fontSize: '36px',
+                color: pool.color,
+                fontFamily: "'VT323', monospace",
+                marginBottom: '8px',
+              }}>
+                {pool.price}
+              </div>
+              <div style={{
+                fontSize: '14px',
+                color: pool.color,
+                marginBottom: '8px',
+                letterSpacing: 2,
+              }}>
+                {pool.name}
+              </div>
+              <div style={{
+                fontSize: '10px',
+                color: '#9de8b4',
+              }}>
+                {pool.schedule}
+              </div>
+            </div>
+          ))}
         </div>
-      </main>
-    </div>
+      </section>
+
+    </main>
   );
 }
