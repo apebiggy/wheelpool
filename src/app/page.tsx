@@ -1,7 +1,5 @@
-'use client';
 // @ts-nocheck
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/exhaustive-deps */
+'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ConnectButton } from './components/ConnectButton';
