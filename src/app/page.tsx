@@ -282,7 +282,7 @@ function DrawTheater({pool,userTickets,drawTime,onClose}:{pool:any;userTickets:a
       }
     },500);
     return()=>clearInterval(tick);
-  },[phase,drawTime,autoFired,simulate]);
+  },[phase,drawTime,autoFired]);// eslint-disable-line
 
   const pf=parseFloat(pool.poolEth);
   const all=[...userTickets.filter(t=>t.poolId===pool.id),...genDemo(pool.id)];
@@ -839,7 +839,7 @@ export default function WheelPool(){
   const[now,setNow]=useState(Date.now());
   const[wheelSize,setWheelSize]=useState(190);
   useEffect(()=>{
-    const onResize=()=>setWheelSize(window.innerWidth>768?290:190);
+    const onResize=()=>{if(typeof window!=='undefined')setWheelSize(window.innerWidth>768?290:190);};
     window.addEventListener("resize",onResize);
     return()=>window.removeEventListener("resize",onResize);
   },[]);
@@ -943,7 +943,7 @@ export default function WheelPool(){
           Mint NFT tickets · Auto draw · Instant payouts · Zero gas for winners
         </div>
         <div style={{display:"flex",justifyContent:"center",gap:12,flexWrap:"wrap"}}>
-          <button onClick={()=>document.getElementById("pools").scrollIntoView({behavior:"smooth"})}
+          <button onClick={()=>typeof document!=="undefined"&&document.getElementById("pools")?.scrollIntoView({behavior:"smooth"})}
             style={{background:"#c44400",color:"#fff",border:"none",padding:"15px 26px",fontSize:"clamp(11px,2.8vw,14px)",cursor:"pointer",fontFamily:"'Press Start 2P',monospace",borderBottom:"4px solid #FF9900",outline:"none",boxShadow:"0 0 28px rgba(196,68,0,.45)"}}>
             🎟 MINT A TICKET
           </button>
@@ -1120,7 +1120,7 @@ export default function WheelPool(){
       <div style={{color:"#c0f0d0",fontSize:"clamp(11px,2.2vw,14px)"}}> Built on Abstract Chain · NFT Tickets · Auto Payouts · Keeper + VRF + Paymaster</div>
     </footer>
 
-    {drawPool&&<DrawTheater pool={drawPool} userTickets={tickets} drawTime={getNextSpin(drawPool.intervalH,drawPool.offsetMin)} onClose={()=>setDrawPool(null)}/>}
+    {drawPool&&<DrawTheater pool={drawPool} userTickets={tickets} drawTime={drawPool?getNextSpin(drawPool.intervalH,drawPool.offsetMin):Date.now()+3600000} onClose={()=>setDrawPool(null)}/>}
     {mintPool&&<MintModal pool={mintPool} onClose={()=>setMintPool(null)} onMinted={t=>{setTickets(p=>[t,...p]);setMintPool(null);setNav("tickets");}}/>}
   </div>);}
 
