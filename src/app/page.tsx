@@ -278,13 +278,45 @@ function DrawTheater({pool,userTickets,drawTime,onClose}:{pool:any;userTickets:a
       if(rem<=0){
         clearInterval(tick);
         setAutoFired(true);
-        setTimeout(()=>simulate(),400); // brief pause then auto-fire
+        setTimeout(()=>simulateRef.current(),400); // brief pause then auto-fire
       }
     },500);
     return()=>clearInterval(tick);
   },[phase,drawTime,autoFired]);// eslint-disable-line
 
+  // Ref to always have latest simulate (avoids stale closure in setTimeout)
+  const simulateRef = useRef<()=>void>(()=>{});
+  useEffect(()=>{ simulateRef.current = simulate; },[simulate]);
+
   const pf=parseFloat(pool.poolEth);
+
+  // ── DRAW HISTORY (last 10 draws for this pool) ───────────────
+  const drawHistory = useMemo(()=>{
+    const now = Date.now();
+    const intervalMs = pool.intervalH * 3600000;
+    const RANK = [{icon:"🥇",label:"JACKPOT",color:"#FFD700",pct:0.50},
+                  {icon:"🥈",label:"2ND",    color:"#C0C0C0",pct:0.25},
+                  {icon:"🥉",label:"3RD",    color:"#CD7F32",pct:0.15}];
+    const wallets = ["0xa0b1","0xc2d3","0xf4e5","0xa1b2","0xb3c4",
+                     "0xd5e6","0xe7f8","0xf9a0","0x1234","0x5678",
+                     "0x9abc","0xdef0","0x2468","0x1357","0xaced"];
+    return Array.from({length:10},(_,i)=>{
+      const drawId = 100 - i;
+      const ts = now - (i+1)*intervalMs;
+      const poolEth = parseFloat(pool.poolEth);
+      return {
+        id: drawId,
+        ts,
+        date: new Date(ts).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}),
+        time: new Date(ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),
+        winners: RANK.map((r,ri)=>({
+          ...r,
+          addr: wallets[(i*3+ri)%wallets.length]+"..."+wallets[(i+ri+5)%wallets.length].slice(2),
+          eth: (poolEth * 0.9 * r.pct).toFixed(5),
+        })),
+      };
+    });
+  },[pool]);
   const all=[...userTickets.filter(t=>t.poolId===pool.id),...genDemo(pool.id)];
   const myCount=userTickets.filter(t=>t.poolId===pool.id).length;
 
@@ -530,7 +562,7 @@ function DrawTheater({pool,userTickets,drawTime,onClose}:{pool:any;userTickets:a
             </div>
             <div style={{textAlign:"center",display:"flex",flexDirection:"column",gap:6,alignItems:"center"}}>
               <div style={{fontSize:9,color:"#3a5a3c",lineHeight:1.8}}>{autoFired?"🚀 DRAW AUTO-FIRED":"Draw fires automatically at scheduled time"}</div>
-              <button onClick={simulate} style={{padding:"10px 20px",background:"#0d4a1e",color:"#3a7a22",border:"1px solid #3a7a22",cursor:"pointer",fontSize:9,fontFamily:"'Press Start 2P',monospace",outline:"none"}}>▶ SIMULATE NOW</button>
+              <button onClick={simulate} style={{padding:"12px 22px",background:"#145414",color:"#1BF26A",border:"2px solid #1BF26A",cursor:"pointer",fontSize:10,fontFamily:"'Press Start 2P',monospace",outline:"none",boxShadow:"0 0 16px rgba(27,242,106,.3)"}}>▶ SIMULATE DRAW</button>
             </div>
           </>);
         })()}
@@ -689,6 +721,44 @@ function DrawTheater({pool,userTickets,drawTime,onClose}:{pool:any;userTickets:a
             </>}
           </>}
         </>}
+
+        {/* ── DRAW HISTORY ── */}
+        <div style={{marginTop:16}}>
+          <div style={{color:"#FFDD00",fontSize:11,letterSpacing:1,marginBottom:10}}>
+            📜 LAST 10 DRAWS
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {drawHistory.map((draw)=>(
+              <div key={draw.id} style={{
+                background:"#0f4a0f",border:"1px solid #2a7a22",
+                padding:"10px 12px",
+              }}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                  <span style={{color:"#1BF26A",fontSize:9}}>DRAW #{draw.id}</span>
+                  <span style={{color:"#9de8b4",fontSize:9,fontFamily:"monospace"}}>
+                    {draw.date} {draw.time}
+                  </span>
+                </div>
+                {draw.winners.map((w,wi)=>(
+                  <div key={wi} style={{
+                    display:"flex",justifyContent:"space-between",
+                    alignItems:"center",
+                    padding:"3px 0",
+                    borderTop: wi>0?"1px solid rgba(42,122,34,.3)":"none",
+                  }}>
+                    <span style={{fontSize:10}}>{w.icon}</span>
+                    <span style={{color:"#9de8b4",fontSize:8,fontFamily:"monospace",flex:1,marginLeft:6}}>
+                      {w.addr}
+                    </span>
+                    <span style={{color:w.color,fontSize:10,fontFamily:"'VT323',monospace"}}>
+                      +{w.eth} ETH
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   </div>);}
