@@ -91,7 +91,7 @@ function PenguinSVG({skin="Classic",hat="None",acc="None",size=80}){
    DRAW THEATER
 ══════════════════════════════════════════════ */
 
-function DrawTheater({pool,userTickets,drawTime,onClose}){
+export default function DrawTheater({pool,userTickets,drawTime,onClose}){
   // ── STATE MACHINE ─────────────────────────────────────────
   // upcoming  → draw hasn't happened yet, countdown running
   // onchain   → simulating: keeper calls executeDraw() on-chain
@@ -581,7 +581,3 @@ function DrawTheater({pool,userTickets,drawTime,onClose}){
       </div>
     </div>
   </div>);}
-
-/* ══════════════════════════════════════════════
-   MINT MODAL
-══════════════════════════════════════════════ */
