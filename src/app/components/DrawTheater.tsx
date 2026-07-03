@@ -277,14 +277,31 @@ export default function DrawTheater({ onClose }) {
       {/* Winner banner */}
       {confetti && (
         <div style={{
-          position:'fixed', top:'20%', left:'50%', transform:'translateX(-50%)',
-          zIndex:2001, textAlign:'center', pointerEvents:'none',
+          position:'fixed', top:0, left:0, right:0, bottom:0,
+          display:'flex', alignItems:'center', justifyContent:'center',
+          zIndex:2001, pointerEvents:'none',
         }}>
-          <div style={{fontSize:48, marginBottom:8}}>🏆</div>
           <div style={{
-            color:'#FFD700', fontSize:14, letterSpacing:3,
-            textShadow:'0 0 30px #FFD700, 0 0 60px #FFD700',
-          }}>YOU WON!</div>
+            background:'rgba(10,30,10,.92)',
+            border:'3px solid #FFD700',
+            boxShadow:'0 0 60px rgba(255,215,0,.6), inset 0 0 40px rgba(255,215,0,.1)',
+            padding:'32px 48px',
+            textAlign:'center',
+            borderRadius:0,
+            backdropFilter:'blur(4px)',
+          }}>
+            <div style={{fontSize:56, marginBottom:12, lineHeight:1}}>🏆</div>
+            <div style={{
+              color:'#FFD700', fontSize:16, letterSpacing:4,
+              textShadow:'0 0 20px #FFD700',
+              marginBottom:8,
+            }}>YOU WON!</div>
+            <div style={{
+              color:'#1BF26A', fontSize:10, letterSpacing:2, marginTop:12,
+            }}>
+              CHECK PRIZE SLOTS BELOW
+            </div>
+          </div>
         </div>
       )}
 
