@@ -84,7 +84,25 @@ function Confetti({ active }) {
 }
 
 // ── Wheel SVG ────────────────────────────────────────────────
-const SEG_COLORS = ['#1BF26A','#0cba48','#FFDD00','#4ef08a','#FFE944','#44FF44'];
+// 16 distinct green shades — dark to bright, cycling through the palette
+const SEG_COLORS = [
+  '#0d5e1e', // very dark forest
+  '#1a7a2e', // dark green
+  '#0f9e36', // medium dark
+  '#1BF26A', // Abstract bright green
+  '#13c455', // vivid mid
+  '#0aad48', // rich green
+  '#44FF44', // neon lime
+  '#2ee870', // bright mint
+  '#0d7a30', // deep forest
+  '#26d95f', // fresh green
+  '#0c6628', // hunter green
+  '#3fff88', // electric mint
+  '#0e8c35', // emerald
+  '#15b84d', // medium bright
+  '#06522a', // darkest
+  '#52f098', // pale bright
+];
 const N_SEGS = 16;
 
 function WheelSVG({ angle, spinning, winners }) {
@@ -124,7 +142,9 @@ function WheelSVG({ angle, spinning, winners }) {
           const fill = isWon ? rankColors[wonRank] : SEG_COLORS[i % SEG_COLORS.length];
           const pt   = tp(i);
           const rot  = ((i+0.5)/N_SEGS*360-90) + (pt.x < cx ? 180 : 0);
-          const isDark = ['#FFDD00','#FFD700','#C0C0C0','#CD7F32','#4ef08a','#FFE944'].includes(fill);
+          // For light greens use dark text, for dark greens use white text
+          const brightness = fill === '#1BF26A' || fill === '#44FF44' || fill === '#2ee870' || fill === '#3fff88' || fill === '#52f098' || fill === '#26d95f' ? 'light' : 'dark';
+          const isDark = brightness === 'light';
           return (
             <g key={i}>
               <path d={seg(i)} fill={fill} stroke={isWon?'#fff':'#0a2e10'} strokeWidth={isWon?2.5:1.5}/>
