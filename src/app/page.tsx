@@ -62,19 +62,19 @@ const WHEEL_SEGS=[
   {c:"#FFDD00", v:"Miles"},     // gold
 ];
 
-const sleep=(ms:number):Promise<void>=>new Promise(r=>setTimeout(r,ms));
-function getRarity():{name:string;color:string;weight:number}{let r=Math.random()*100,a=0;for(const rt of RARITIES){a+=rt.weight;if(r<a)return rt;}return RARITIES[0];}
+const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
+function getRarity(){let r=Math.random()*100,a=0;for(const rt of RARITIES){a+=rt.weight;if(r<a)return rt;}return RARITIES[0];}
 let _tc=1;
-function mintTicket(pid:string){return{id:`WP-${pid.toUpperCase()}-${String(_tc++).padStart(4,"0")}`,poolId:pid,rarity:getRarity(),skin:SKINS[Math.floor(Math.random()*SKINS.length)],hat:HATS[Math.floor(Math.random()*HATS.length)],acc:ACCS[Math.floor(Math.random()*ACCS.length)],status:"LIVE",ts:Date.now(),addr:"0x"+Math.random().toString(16).slice(2,10)};}
-function stackR(results:any[]){const m={};results.forEach(r=>{const id=r.ticket.id;if(!m[id])m[id]={ticket:r.ticket,prizes:[],totalEth:0};m[id].prizes.push(r);m[id].totalEth+=parseFloat(r.ethWon);});return Object.values(m).sort((a,b)=>b.prizes.length-a.prizes.length||b.totalEth-a.totalEth);}
-function genDemo(pid:string){return[...Array(13).fill("Common"),...Array(8).fill("Uncommon"),...Array(5).fill("Rare"),...Array(3).fill("Epic"),...Array(1).fill("Legendary")].map((rn,i)=>{const rarity=RARITIES.find(r=>r.name===rn)||RARITIES[0];return{id:`DEMO-${pid.toUpperCase()}-${String(i+1).padStart(3,"0")}`,poolId:pid,rarity,skin:SKINS[i%6],hat:HATS[i%6],acc:ACCS[i%6],status:"LIVE",addr:`0x${(0xA000+i).toString(16)}...${(0xB000+i).toString(16)}`};});}
-function getNextSpin(ih:number,om:number){const n=Date.now(),im=ih*3600000,o2=om*60000,dm=86400000,b=Math.floor(n/dm)*dm;for(let i=0;i<=Math.ceil(24/ih)+2;i++){const t=b+i*im+o2;if(t>n+500)return t;}return b+dm+o2;}
-function fmtMs(ms:number){if(ms<=0)return"00:00:00";const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000),s=Math.floor((ms%60000)/1000);return`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;}
+function mintTicket(pid){return{id:`WP-${pid.toUpperCase()}-${String(_tc++).padStart(4,"0")}`,poolId:pid,rarity:getRarity(),skin:SKINS[Math.floor(Math.random()*SKINS.length)],hat:HATS[Math.floor(Math.random()*HATS.length)],acc:ACCS[Math.floor(Math.random()*ACCS.length)],status:"LIVE",ts:Date.now(),addr:"0x"+Math.random().toString(16).slice(2,10)};}
+function stackR(results){const m={};results.forEach(r=>{const id=r.ticket.id;if(!m[id])m[id]={ticket:r.ticket,prizes:[],totalEth:0};m[id].prizes.push(r);m[id].totalEth+=parseFloat(r.ethWon);});return Object.values(m).sort((a,b)=>b.prizes.length-a.prizes.length||b.totalEth-a.totalEth);}
+function genDemo(pid){return[...Array(13).fill("Common"),...Array(8).fill("Uncommon"),...Array(5).fill("Rare"),...Array(3).fill("Epic"),...Array(1).fill("Legendary")].map((rn,i)=>{const rarity=RARITIES.find(r=>r.name===rn)||RARITIES[0];return{id:`DEMO-${pid.toUpperCase()}-${String(i+1).padStart(3,"0")}`,poolId:pid,rarity,skin:SKINS[i%6],hat:HATS[i%6],acc:ACCS[i%6],status:"LIVE",addr:`0x${(0xA000+i).toString(16)}...${(0xB000+i).toString(16)}`};});}
+function getNextSpin(ih,om){const n=Date.now(),im=ih*3600000,o2=om*60000,dm=86400000,b=Math.floor(n/dm)*dm;for(let i=0;i<=Math.ceil(24/ih)+2;i++){const t=b+i*im+o2;if(t>n+500)return t;}return b+dm+o2;}
+function fmtMs(ms){if(ms<=0)return"00:00:00";const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000),s=Math.floor((ms%60000)/1000);return`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;}
 
 /* ══════════════════════════════════════════════
    INTERACTIVE WHEEL — replaces the static image wheel
 ══════════════════════════════════════════════ */
-function SpinFX({active,size}:{active:boolean;size:number}){
+function SpinFX({active,size}){
   if(!active)return null;
   const sparks=[
     {a:0,  d:90, c:"#1BF26A",s:7,dl:"0s"},
@@ -127,18 +127,18 @@ function SpinFX({active,size}:{active:boolean;size:number}){
   );
 }
 
-function InteractiveWheel({size=300}:{size?:number}){
+function InteractiveWheel({size=300}){
   const[angle,setAngle]=useState(0);
   const[spinning,setSpinning]=useState(false);
   const[label,setLabel]=useState("CLICK TO SPIN");
   const[showFX,setShowFX]=useState(false);
   const N=WHEEL_SEGS.length,cx=size/2,cy=size/2,r=size/2-18;
 
-  const seg=(i:number)=>{
+  const seg=(i)=>{
     const a1=(i/N)*2*Math.PI-Math.PI/2,a2=((i+1)/N)*2*Math.PI-Math.PI/2;
     return`M${cx},${cy} L${cx+r*Math.cos(a1)},${cy+r*Math.sin(a1)} A${r},${r} 0 0,1 ${cx+r*Math.cos(a2)},${cy+r*Math.sin(a2)}Z`;
   };
-  const tp=(i:number)=>{const a=((i+.5)/N)*2*Math.PI-Math.PI/2;return{x:cx+r*.68*Math.cos(a),y:cy+r*.68*Math.sin(a)};};
+  const tp=(i)=>{const a=((i+.5)/N)*2*Math.PI-Math.PI/2;return{x:cx+r*.68*Math.cos(a),y:cy+r*.68*Math.sin(a)};};
 
   const spin=()=>{
     if(spinning)return;
@@ -225,7 +225,7 @@ function InteractiveWheel({size=300}:{size?:number}){
   );
 }
 
-function PenguinSVG({skin="Classic",hat="None",acc="None",size=80}:{skin?:string;hat?:string;acc?:string;size?:number}){
+function PenguinSVG({skin="Classic",hat="None",acc="None",size=80}){
   const SC={"Classic":{b:"#1a1a2e",belly:"#f0f0f0"},"Golden":{b:"#8B6914",belly:"#FFD700"},"Arctic Blue":{b:"#1a3a6e",belly:"#b8d4ff"},"Obsidian":{b:"#0a0a12",belly:"#2a2a3a"},"Rainbow":{b:"#7a1a8e",belly:"#ffccff"},"Lava":{b:"#8e2a1a",belly:"#ff9966"}};
   const{b,belly}=SC[skin]||SC["Classic"];
   return(<svg width={size} height={size} viewBox="0 0 80 80">
@@ -253,7 +253,7 @@ function PenguinSVG({skin="Classic",hat="None",acc="None",size=80}:{skin?:string
 /* ══════════════════════════════════════════════
    DRAW THEATER
 ══════════════════════════════════════════════ */
-function DrawTheater({pool, userTickets, drawTime, onClose}:{pool:any;userTickets:any[];drawTime:number;onClose:()=>void}){
+function DrawTheater({pool, userTickets, drawTime, onClose}){
   const pf = parseFloat(pool.poolEth);
   return(
     <div style={{
@@ -279,7 +279,7 @@ function DrawTheater({pool, userTickets, drawTime, onClose}:{pool:any;userTicket
 }
 
 
-function MintModal({pool,onClose,onMinted}:{pool:any;onClose:()=>void;onMinted:(t:any)=>void}){
+function MintModal({pool,onClose,onMinted}){
   const[step,setStep]=useState("confirm");
   const[ticket,setTicket]=useState(null);
   const[ti,setTi]=useState(0);
@@ -326,7 +326,7 @@ function MintModal({pool,onClose,onMinted}:{pool:any;onClose:()=>void;onMinted:(
 /* ══════════════════════════════════════════════
    POOL CARD
 ══════════════════════════════════════════════ */
-function PoolCard({pool,msLeft,myTickets,onMint,onDraw}:{pool:any;msLeft:number;myTickets:any[];onMint:()=>void;onDraw:()=>void}){
+function PoolCard({pool,msLeft,myTickets,onMint,onDraw}){
   const[hov,setHov]=useState(false);
   const soon=msLeft<3600000,urgent=msLeft<300000;
   const mc=myTickets.length;
@@ -387,7 +387,7 @@ function PoolCard({pool,msLeft,myTickets,onMint,onDraw}:{pool:any;msLeft:number;
 /* ══════════════════════════════════════════════
    TICKET CARD
 ══════════════════════════════════════════════ */
-function TicketCard({ticket}:{ticket:any}){
+function TicketCard({ticket}){
   const pool=POOLS.find(p=>p.id===ticket.poolId)||POOLS[0];
   const rc=ticket.rarity.color;
   return(<div style={{background:"linear-gradient(160deg,#306420,#1a6830)",border:`2px solid ${rc}55`,borderTop:`3px solid ${rc}`,padding:"14px",width:158,flexShrink:0,boxShadow:`0 0 14px ${rc}22`,position:"relative",overflow:"hidden"}}>
