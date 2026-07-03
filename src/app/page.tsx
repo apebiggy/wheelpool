@@ -908,6 +908,8 @@ export default function WheelPool(){
   const wallet = "";
   const ethBalance = "0.0000";
   const[now,setNow]=useState(Date.now());
+  const[mounted,setMounted]=useState(false);
+  useEffect(()=>setMounted(true),[]);
   const[wheelSize,setWheelSize]=useState(190);
   useEffect(()=>{
     const onResize=()=>{if(typeof window!=='undefined')setWheelSize(window.innerWidth>768?290:190);};
@@ -1191,7 +1193,7 @@ export default function WheelPool(){
       <div style={{color:"#c0f0d0",fontSize:"clamp(11px,2.2vw,14px)"}}> Built on Abstract Chain · NFT Tickets · Auto Payouts · Keeper + VRF + Paymaster</div>
     </footer>
 
-    {drawPool&&<DrawTheater pool={drawPool} userTickets={tickets} drawTime={drawPool?getNextSpin(drawPool.intervalH,drawPool.offsetMin):Date.now()+3600000} onClose={()=>setDrawPool(null)}/>}
-    {mintPool&&<MintModal pool={mintPool} onClose={()=>setMintPool(null)} onMinted={t=>{setTickets(p=>[t,...p]);setMintPool(null);setNav("tickets");}}/>}
+    {mounted&&drawPool&&<DrawTheater pool={drawPool} userTickets={tickets} drawTime={drawPool?getNextSpin(drawPool.intervalH,drawPool.offsetMin):Date.now()+3600000} onClose={()=>setDrawPool(null)}/>}
+    {mounted&&mintPool&&<MintModal pool={mintPool} onClose={()=>setMintPool(null)} onMinted={t=>{setTickets(p=>[t,...p]);setMintPool(null);setNav("tickets");}}/>}
   </div>);}
 
