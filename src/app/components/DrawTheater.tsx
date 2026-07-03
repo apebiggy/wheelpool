@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useAccount } from 'wagmi';
 
 const POOLS = [
   { id:'spin',   name:'SPIN',   icon:'🎡', intervalH:1,  label:'EVERY HOUR',     entryEth:'0.0008', poolEth:'0.0376', color:'#FF6633', darkBg:'#1a0800' },
@@ -17,11 +18,13 @@ const PRIZE_SLOTS = [
 ];
 
 const WALLETS = [
-  '0xa0b1...c2d3','0xf4e5...g6h7','0xa1b2...c3d4',
+  '0xa0b1...c2d3','0xf4e5...a6b7','0xa1b2...c3d4',
   '0xb3c4...d5e6','0xd5e6...e7f8','0xe7f8...f9a0',
   '0x1234...5678','0x9abc...def0','0x2468...1357',
   '0xaced...bef0','0x5555...aaaa','0x7777...8888',
 ];
+
+const CONFETTI_COLORS = ['#1BF26A','#FFDD00','#FF6633','#AA44FF','#00DDAA','#FF4444','#44FF44','#FFE944'];
 
 function fmtMs(ms) {
   if (ms <= 0) return '00:00:00';
@@ -37,8 +40,47 @@ function getNextDraw(intervalH) {
   return Math.ceil(now / ms) * ms;
 }
 
-function sleep(ms) {
-  return new Promise(r => setTimeout(r, ms));
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Confetti component ───────────────────────────────────────
+function Confetti({ active }) {
+  if (!active) return null;
+  const pieces = Array.from({ length: 60 }, (_, i) => ({
+    id: i,
+    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+    left: Math.random() * 100,
+    delay: Math.random() * 1.5,
+    duration: 2 + Math.random() * 2,
+    size: 6 + Math.random() * 8,
+    shape: i % 3 === 0 ? 'circle' : i % 3 === 1 ? 'rect' : 'star',
+  }));
+
+  return (
+    <div style={{
+      position:'fixed', inset:0, pointerEvents:'none', zIndex:2000, overflow:'hidden',
+    }}>
+      {pieces.map(p => (
+        <div key={p.id} style={{
+          position:'absolute',
+          left:`${p.left}%`,
+          top:'-20px',
+          width: p.size,
+          height: p.shape === 'rect' ? p.size * 0.5 : p.size,
+          background: p.color,
+          borderRadius: p.shape === 'circle' ? '50%' : '2px',
+          animation: `confettiFall ${p.duration}s ease-in ${p.delay}s forwards`,
+          boxShadow: `0 0 ${p.size}px ${p.color}88`,
+        }}/>
+      ))}
+      <style>{`
+        @keyframes confettiFall {
+          0%   { transform: translateY(0) rotate(0deg) scale(1);   opacity:1; }
+          80%  { opacity:1; }
+          100% { transform: translateY(110vh) rotate(720deg) scale(0.5); opacity:0; }
+        }
+      `}</style>
+    </div>
+  );
 }
 
 // ── Wheel SVG ────────────────────────────────────────────────
@@ -62,10 +104,8 @@ function WheelSVG({ angle, spinning, winners }) {
   return (
     <div style={{ position:'relative', display:'inline-block' }}>
       <div style={{
-        position:'absolute', top:-8, left:'50%',
-        transform:'translateX(-50%)',
-        fontSize:20, color:'#FF4444',
-        textShadow:'0 0 10px #FF4444', zIndex:5, lineHeight:1,
+        position:'absolute', top:-8, left:'50%', transform:'translateX(-50%)',
+        fontSize:20, color:'#FF4444', textShadow:'0 0 10px #FF4444', zIndex:5, lineHeight:1,
       }}>▼</div>
       <svg width="240" height="240" style={{
         transform:`rotate(${angle}deg)`,
@@ -84,13 +124,13 @@ function WheelSVG({ angle, spinning, winners }) {
           const fill = isWon ? rankColors[wonRank] : SEG_COLORS[i % SEG_COLORS.length];
           const pt   = tp(i);
           const rot  = ((i+0.5)/N_SEGS*360-90) + (pt.x < cx ? 180 : 0);
+          const isDark = ['#FFDD00','#FFD700','#C0C0C0','#CD7F32','#4ef08a','#FFE944'].includes(fill);
           return (
             <g key={i}>
               <path d={seg(i)} fill={fill} stroke={isWon?'#fff':'#0a2e10'} strokeWidth={isWon?2.5:1.5}/>
               <text x={pt.x} y={pt.y}
                 textAnchor="middle" dominantBaseline="middle"
-                fill={fill==='#FFDD00'||fill==='#FFD700'||fill==='#C0C0C0'||fill==='#CD7F32'||fill==='#4ef08a'||fill==='#FFE944'?'#0a2e10':'#fff'}
-                fontSize={6}
+                fill={isDark?'#0a2e10':'#fff'} fontSize={6}
                 fontFamily="'Press Start 2P',monospace"
                 transform={`rotate(${rot},${pt.x},${pt.y})`}
               >{`#${i+1}`}</text>
@@ -112,54 +152,55 @@ function WheelSVG({ angle, spinning, winners }) {
   );
 }
 
-// ── Main DrawTheater component ────────────────────────────────
+// ── Main DrawTheater ─────────────────────────────────────────
 export default function DrawTheater({ onClose }) {
+  const { address } = useAccount();
+  const shortAddr = address ? `${address.slice(0,6)}...${address.slice(-4)}` : null;
+
   const [selectedPool, setSelectedPool] = useState(POOLS[0]);
-  const [phase, setPhase]   = useState('waiting'); // waiting | spinning | complete
-  const [msLeft, setMsLeft] = useState(0);
-  const [angle,  setAngle]  = useState(0);
+  const [phase,    setPhase]    = useState('waiting');
+  const [msLeft,   setMsLeft]   = useState(0);
+  const [angle,    setAngle]    = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [results,  setResults]  = useState([]);
   const [history,  setHistory]  = useState([]);
-  const [autoFired, setAutoFired] = useState(false);
+  const [autoFired,setAutoFired]= useState(false);
+  const [confetti, setConfetti] = useState(false);
   const angleRef = useRef(0);
 
-  // ── Countdown ──────────────────────────────────────────────
+  // Countdown
   useEffect(() => {
     setPhase('waiting');
     setResults([]);
     setAutoFired(false);
     setSpinning(false);
-
+    setConfetti(false);
     const tick = setInterval(() => {
       const rem = getNextDraw(selectedPool.intervalH) - Date.now();
       setMsLeft(rem);
-      if (rem <= 0 && !autoFired) {
-        clearInterval(tick);
-        setAutoFired(true);
-      }
+      if (rem <= 0 && !autoFired) { clearInterval(tick); setAutoFired(true); }
     }, 500);
-    // Set initial immediately
     setMsLeft(getNextDraw(selectedPool.intervalH) - Date.now());
     return () => clearInterval(tick);
   }, [selectedPool.id]);
 
-  // ── Auto-fire when autoFired flips ─────────────────────────
-  useEffect(() => {
-    if (autoFired) runDraw();
-  }, [autoFired]);
+  useEffect(() => { if (autoFired) runDraw(); }, [autoFired]);
 
-  // ── Generate mock history ──────────────────────────────────
+  // History with pool name + fake TX hash
   useEffect(() => {
     const intervalMs = selectedPool.intervalH * 3600000;
     const pf = parseFloat(selectedPool.poolEth);
     const now = Date.now();
-    const h = Array.from({length:10}, (_,i) => {
+    setHistory(Array.from({length:10}, (_,i) => {
       const ts = now - (i+1) * intervalMs;
+      const txHash = '0x' + Array.from({length:16},()=>Math.floor(Math.random()*16).toString(16)).join('') + '...';
       return {
         id: 100 - i,
+        pool: selectedPool,
         date: new Date(ts).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}),
         time: new Date(ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),
+        txHash,
+        txUrl: `https://abscan.org/tx/${txHash}`,
         winners: PRIZE_SLOTS.map((slot, ri) => ({
           icon:  slot.icon,
           color: slot.color,
@@ -168,24 +209,22 @@ export default function DrawTheater({ onClose }) {
           eth:   (pf * 0.9 * slot.pct / 100).toFixed(5),
         })),
       };
-    });
-    setHistory(h);
+    }));
   }, [selectedPool.id]);
 
-  // ── Run draw ───────────────────────────────────────────────
   const runDraw = useCallback(async () => {
     if (phase === 'spinning') return;
     setPhase('spinning');
     setResults([]);
     setSpinning(true);
+    setConfetti(false);
 
     const pf = parseFloat(selectedPool.poolEth);
     const drawn = [];
+    let userWon = false;
 
     for (let i = 0; i < 3; i++) {
-      // Pick random segment
       const segIndex = Math.floor(Math.random() * N_SEGS);
-      // Calculate precise landing angle
       const segCenter = (segIndex + 0.5) / N_SEGS * 360;
       const current   = angleRef.current % 360;
       const diff      = ((segCenter - current) + 360) % 360;
@@ -193,15 +232,19 @@ export default function DrawTheater({ onClose }) {
       angleRef.current = target;
       setAngle(target);
 
-      await sleep(7600); // wait for spin
+      await sleep(7600);
 
-      const addr = WALLETS[Math.floor(Math.random() * WALLETS.length)];
-      const slot = PRIZE_SLOTS[i];
+      // 25% chance connected wallet wins this slot (demo)
+      const isUserWin = shortAddr && Math.random() < 0.25;
+      if (isUserWin) userWon = true;
+
+      const addr = isUserWin ? shortAddr : WALLETS[Math.floor(Math.random() * WALLETS.length)];
       drawn.push({
-        slot,
+        slot: PRIZE_SLOTS[i],
         segIndex,
         addr,
-        eth: (pf * 0.9 * slot.pct / 100).toFixed(5),
+        eth: (pf * 0.9 * PRIZE_SLOTS[i].pct / 100).toFixed(5),
+        isUser: isUserWin,
       });
       setResults([...drawn]);
       if (i < 2) await sleep(800);
@@ -209,7 +252,13 @@ export default function DrawTheater({ onClose }) {
 
     setSpinning(false);
     setPhase('complete');
-  }, [selectedPool, phase]);
+
+    // Confetti if connected wallet won anything
+    if (userWon) {
+      setConfetti(true);
+      setTimeout(() => setConfetti(false), 5000);
+    }
+  }, [selectedPool, phase, shortAddr]);
 
   const urgent   = msLeft < 30000;
   const critical = msLeft < 10000;
@@ -221,9 +270,23 @@ export default function DrawTheater({ onClose }) {
       position:'fixed', inset:0, zIndex:1000,
       background:'#0d4a1e', color:'#fff',
       fontFamily:"'Press Start 2P',monospace",
-      display:'flex', flexDirection:'column',
-      overflow:'auto',
+      display:'flex', flexDirection:'column', overflow:'auto',
     }}>
+      <Confetti active={confetti}/>
+
+      {/* Winner banner */}
+      {confetti && (
+        <div style={{
+          position:'fixed', top:'20%', left:'50%', transform:'translateX(-50%)',
+          zIndex:2001, textAlign:'center', pointerEvents:'none',
+        }}>
+          <div style={{fontSize:48, marginBottom:8}}>🏆</div>
+          <div style={{
+            color:'#FFD700', fontSize:14, letterSpacing:3,
+            textShadow:'0 0 30px #FFD700, 0 0 60px #FFD700',
+          }}>YOU WON!</div>
+        </div>
+      )}
 
       {/* HEADER */}
       <div style={{
@@ -232,14 +295,9 @@ export default function DrawTheater({ onClose }) {
         borderBottom:'2px solid #1BF26A', flexShrink:0, flexWrap:'wrap', gap:8,
       }}>
         <span style={{color:'#FFDD00', fontSize:12, letterSpacing:2}}>🎲 DRAW ROOM</span>
-
-        {/* Pool selector dropdown */}
         <select
           value={selectedPool.id}
-          onChange={e => {
-            const p = POOLS.find(p => p.id === e.target.value);
-            if (p) setSelectedPool(p);
-          }}
+          onChange={e => setSelectedPool(POOLS.find(p => p.id === e.target.value) || POOLS[0])}
           style={{
             background:'#145414', color:'#1BF26A',
             border:'2px solid #1BF26A', padding:'8px 12px',
@@ -251,7 +309,6 @@ export default function DrawTheater({ onClose }) {
             <option key={p.id} value={p.id}>{p.icon} {p.name} — {p.label}</option>
           ))}
         </select>
-
         <button onClick={onClose} style={{
           background:'#2a0808', border:'2px solid #FF4444',
           color:'#FF4444', padding:'8px 14px',
@@ -263,91 +320,55 @@ export default function DrawTheater({ onClose }) {
       {/* BODY */}
       <div style={{display:'flex', flex:1, flexWrap:'wrap', overflow:'auto'}}>
 
-        {/* LEFT — wheel + countdown */}
+        {/* LEFT */}
         <div style={{
           flex:'1 1 300px', padding:'24px 16px',
-          display:'flex', flexDirection:'column',
-          alignItems:'center', gap:16,
+          display:'flex', flexDirection:'column', alignItems:'center', gap:16,
         }}>
-
-          {/* Pool info badge */}
-          <div style={{
-            display:'flex', gap:8, flexWrap:'wrap', justifyContent:'center',
-          }}>
-            <div style={{
-              background:selectedPool.darkBg,
-              border:`2px solid ${selectedPool.color}`,
-              color:selectedPool.color, padding:'6px 14px', fontSize:10,
-            }}>
+          <div style={{display:'flex', gap:8, flexWrap:'wrap', justifyContent:'center'}}>
+            <div style={{background:selectedPool.darkBg, border:`2px solid ${selectedPool.color}`, color:selectedPool.color, padding:'6px 14px', fontSize:10}}>
               {selectedPool.icon} {selectedPool.name}
             </div>
-            <div style={{
-              background:'#0a2010', border:'1px solid #2a7a22',
-              color:'#9de8b4', padding:'6px 14px', fontSize:9,
-            }}>
+            <div style={{background:'#0a2010', border:'1px solid #2a7a22', color:'#9de8b4', padding:'6px 14px', fontSize:9}}>
               Pool: {selectedPool.poolEth} ETH
             </div>
           </div>
 
-          {/* Countdown */}
           {phase === 'waiting' && (
             <div style={{
               background:'#050d05', width:'100%',
               border:`2px solid ${critical?'#FF4444':urgent?'#FFDD00':selectedPool.color}`,
               padding:'18px', textAlign:'center',
-              boxShadow: critical ? '0 0 24px rgba(255,68,68,.35)' : `0 0 16px ${selectedPool.color}44`,
             }}>
-              <div style={{
-                fontSize:10, marginBottom:8, letterSpacing:2,
-                color: critical ? '#FF4444' : urgent ? '#FFDD00' : '#9de8b4',
-                animation: critical ? 'blink .5s infinite' : 'none',
-              }}>
-                {critical ? '⚡ DRAW STARTING!' : urgent ? '⏱ DRAW SOON' : '⏱ NEXT DRAW IN'}
+              <div style={{fontSize:10, marginBottom:8, letterSpacing:2, color:critical?'#FF4444':urgent?'#FFDD00':'#9de8b4'}}>
+                {critical?'⚡ DRAW STARTING!':urgent?'⏱ DRAW SOON':'⏱ NEXT DRAW IN'}
               </div>
-              <div style={{
-                fontSize:'clamp(28px,6vw,42px)', letterSpacing:6,
-                fontFamily:"'VT323',monospace",
-                color: critical ? '#FF4444' : urgent ? '#FFDD00' : selectedPool.color,
-                lineHeight:1.1, marginBottom:10,
-                animation: critical ? 'blink .4s infinite' : 'none',
-              }}>
+              <div style={{fontSize:'clamp(28px,6vw,42px)', letterSpacing:6, fontFamily:"'VT323',monospace", color:critical?'#FF4444':urgent?'#FFDD00':selectedPool.color, lineHeight:1.1, marginBottom:10}}>
                 {fmtMs(Math.max(0, msLeft))}
               </div>
               <div style={{height:5, background:'#0a1a0a', overflow:'hidden', marginBottom:6}}>
-                <div style={{
-                  width:`${pct}%`, height:'100%',
-                  background: critical ? '#FF4444' : urgent ? '#FFDD00' : selectedPool.color,
-                  transition:'width .5s linear',
-                }}/>
+                <div style={{width:`${pct}%`, height:'100%', background:critical?'#FF4444':urgent?'#FFDD00':selectedPool.color, transition:'width .5s linear'}}/>
               </div>
               <div style={{fontSize:9, color:'#3a7a22'}}>{selectedPool.label}</div>
             </div>
           )}
 
-          {/* Wheel */}
-          <WheelSVG
-            angle={angle}
-            spinning={spinning}
-            winners={results.map(r => ({ segIndex: r.segIndex }))}
-          />
+          <WheelSVG angle={angle} spinning={spinning} winners={results.map(r=>({segIndex:r.segIndex}))}/>
 
-          {/* Buttons */}
-          <div style={{display:'flex', gap:8}}>
-            <button
-              onClick={runDraw}
-              disabled={phase==='spinning'}
-              style={{
-                padding:'12px 20px',
-                background: phase==='spinning' ? '#0a2010' : '#145414',
-                color: phase==='spinning' ? '#3a7a22' : '#1BF26A',
-                border:`2px solid ${phase==='spinning'?'#3a7a22':'#1BF26A'}`,
-                cursor: phase==='spinning' ? 'default' : 'pointer',
-                fontSize:10, fontFamily:"'Press Start 2P',monospace", outline:'none',
-              }}
-            >
-              {phase==='spinning' ? '⏳ SPINNING...' : phase==='complete' ? '🔄 SPIN AGAIN' : '▶ SIMULATE DRAW'}
-            </button>
-          </div>
+          <button
+            onClick={runDraw}
+            disabled={phase==='spinning'}
+            style={{
+              padding:'12px 20px',
+              background:phase==='spinning'?'#0a2010':'#145414',
+              color:phase==='spinning'?'#3a7a22':'#1BF26A',
+              border:`2px solid ${phase==='spinning'?'#3a7a22':'#1BF26A'}`,
+              cursor:phase==='spinning'?'default':'pointer',
+              fontSize:10, fontFamily:"'Press Start 2P',monospace", outline:'none',
+            }}
+          >
+            {phase==='spinning'?'⏳ SPINNING...':phase==='complete'?'🔄 SPIN AGAIN':'▶ SIMULATE DRAW'}
+          </button>
 
           {/* Prize slot cards */}
           <div style={{display:'flex', gap:6, flexWrap:'wrap', justifyContent:'center', width:'100%'}}>
@@ -356,17 +377,18 @@ export default function DrawTheater({ onClose }) {
               return (
                 <div key={i} style={{
                   flex:'1 1 90px', maxWidth:140, minWidth:85,
-                  background: res ? `linear-gradient(160deg,${slot.color}18,#050d05)` : '#050d05',
-                  border:`2px solid ${res ? slot.color : '#2a5a2a'}`,
-                  padding:'10px 6px', textAlign:'center',
-                  transition:'all .4s',
+                  background:res?`linear-gradient(160deg,${slot.color}18,#050d05)`:'#050d05',
+                  border:`2px solid ${res?slot.color:'#2a5a2a'}`,
+                  padding:'10px 6px', textAlign:'center', transition:'all .4s',
+                  boxShadow:res?.isUser?`0 0 20px ${slot.color}`:'none',
                 }}>
                   <div style={{fontSize:16, marginBottom:8}}>{slot.icon}</div>
                   <div style={{color:slot.color, fontSize:9, marginBottom:4}}>{slot.label}</div>
                   <div style={{color:'#3a7a22', fontSize:8, marginBottom:8}}>{slot.pct}%</div>
                   {res ? (
                     <>
-                      <div style={{fontSize:9, color:'#9de8b4', fontFamily:'monospace', marginBottom:4, wordBreak:'break-all'}}>{res.addr}</div>
+                      {res.isUser && <div style={{color:'#FFD700', fontSize:8, marginBottom:4}}>⭐ YOU!</div>}
+                      <div style={{fontSize:8, color:res.isUser?'#FFD700':'#9de8b4', fontFamily:'monospace', marginBottom:4, wordBreak:'break-all'}}>{res.addr}</div>
                       <div style={{color:slot.color, fontSize:14, fontFamily:"'VT323',monospace"}}>+{res.eth} ETH</div>
                     </>
                   ) : (
@@ -378,63 +400,78 @@ export default function DrawTheater({ onClose }) {
           </div>
         </div>
 
-        {/* RIGHT — info + history */}
+        {/* RIGHT — prize split + history */}
         <div style={{
-          flex:'0 0 260px', background:'rgba(8,40,8,.8)',
+          flex:'0 0 270px', background:'rgba(8,40,8,.8)',
           borderLeft:'1px solid #2a5a2a', padding:'20px',
           overflowY:'auto', display:'flex', flexDirection:'column', gap:14,
         }}>
-
-          {/* Prize split */}
           <div>
             <div style={{color:'#FFDD00', fontSize:10, marginBottom:10}}>PRIZE SPLIT</div>
-            {PRIZE_SLOTS.map(slot => {
-              const pf = parseFloat(selectedPool.poolEth);
-              return (
-                <div key={slot.label} style={{
-                  display:'flex', justifyContent:'space-between',
-                  marginBottom:6, fontSize:9,
-                }}>
-                  <span style={{color:slot.color}}>{slot.icon} {slot.label}</span>
-                  <span style={{color:'#9de8b4'}}>{(pf*0.9*slot.pct/100).toFixed(5)} ETH</span>
-                </div>
-              );
-            })}
-            <div style={{
-              display:'flex', justifyContent:'space-between',
-              marginTop:6, paddingTop:6, borderTop:'1px solid #2a5a2a', fontSize:9,
-            }}>
+            {PRIZE_SLOTS.map(slot => (
+              <div key={slot.label} style={{display:'flex', justifyContent:'space-between', marginBottom:6, fontSize:9}}>
+                <span style={{color:slot.color}}>{slot.icon} {slot.label}</span>
+                <span style={{color:'#9de8b4'}}>{(parseFloat(selectedPool.poolEth)*0.9*slot.pct/100).toFixed(5)} ETH</span>
+              </div>
+            ))}
+            <div style={{display:'flex', justifyContent:'space-between', marginTop:6, paddingTop:6, borderTop:'1px solid #2a5a2a', fontSize:9}}>
               <span style={{color:'#FF6644'}}>⚙ OPS + PROTOCOL</span>
               <span style={{color:'#FF6644'}}>{(parseFloat(selectedPool.poolEth)*0.1).toFixed(5)} ETH</span>
             </div>
           </div>
 
-          {/* Draw history */}
+          {/* History */}
           <div>
             <div style={{color:'#FFDD00', fontSize:10, marginBottom:10}}>📜 LAST 10 DRAWS</div>
-            {history.length === 0 && (
-              <div style={{color:'#3a7a22', fontSize:8}}>Loading...</div>
-            )}
             {history.map(draw => (
               <div key={draw.id} style={{
                 background:'#0a2a0a', border:'1px solid #2a5a2a',
-                padding:'8px 10px', marginBottom:6,
+                padding:'8px 10px', marginBottom:8,
               }}>
-                <div style={{display:'flex', justifyContent:'space-between', marginBottom:5}}>
-                  <span style={{color:'#1BF26A', fontSize:8}}>#{draw.id}</span>
+                {/* Pool + draw ID + date */}
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4}}>
+                  <div style={{display:'flex', alignItems:'center', gap:6}}>
+                    <span style={{
+                      background:draw.pool.darkBg,
+                      border:`1px solid ${draw.pool.color}`,
+                      color:draw.pool.color,
+                      fontSize:7, padding:'2px 5px',
+                    }}>
+                      {draw.pool.icon} {draw.pool.name}
+                    </span>
+                    <span style={{color:'#1BF26A', fontSize:7}}>#{draw.id}</span>
+                  </div>
                   <span style={{color:'#3a7a22', fontSize:7, fontFamily:'monospace'}}>{draw.date} {draw.time}</span>
                 </div>
+
+                {/* Winners */}
                 {draw.winners.map((w, wi) => (
                   <div key={wi} style={{
-                    display:'flex', justifyContent:'space-between',
-                    alignItems:'center', padding:'2px 0',
-                    borderTop: wi > 0 ? '1px solid rgba(42,90,42,.4)' : 'none',
+                    display:'flex', justifyContent:'space-between', alignItems:'center',
+                    padding:'2px 0',
+                    borderTop:wi>0?'1px solid rgba(42,90,42,.4)':'none',
                   }}>
                     <span style={{fontSize:9}}>{w.icon}</span>
                     <span style={{color:'#9de8b4', fontSize:7, fontFamily:'monospace', flex:1, marginLeft:4}}>{w.addr}</span>
                     <span style={{color:w.color, fontSize:11, fontFamily:"'VT323',monospace"}}>+{w.eth}</span>
                   </div>
                 ))}
+
+                {/* TX verify link */}
+                <a
+                  href={draw.txUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display:'block', marginTop:6,
+                    color:'#1BF26A', fontSize:7,
+                    textDecoration:'none', letterSpacing:1,
+                    borderTop:'1px solid rgba(27,242,106,.2)',
+                    paddingTop:5,
+                  }}
+                >
+                  🔍 VERIFY TX →
+                </a>
               </div>
             ))}
           </div>
