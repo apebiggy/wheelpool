@@ -225,9 +225,12 @@ export default function DrawTheater({ onClose }) {
 
     for (let i = 0; i < 3; i++) {
       const segIndex = Math.floor(Math.random() * N_SEGS);
+      // Arrow is at 12 o'clock. Segment i center is at (i+0.5)/N*360 - 90 in wheel coords.
+      // To land segment i at arrow, wheel must rotate by: (360 - segCenter) % 360
       const segCenter = (segIndex + 0.5) / N_SEGS * 360;
-      const current   = angleRef.current % 360;
-      const diff      = ((segCenter - current) + 360) % 360;
+      const targetR   = (360 - segCenter + 360) % 360;
+      const current   = ((angleRef.current % 360) + 360) % 360;
+      const diff      = ((targetR - current) + 360) % 360;
       const target    = angleRef.current + diff + 8 * 360;
       angleRef.current = target;
       setAngle(target);
