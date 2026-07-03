@@ -429,10 +429,11 @@ export default function WheelPool(){
     <header style={{
       background:"rgba(12,60,24,.98)",
       borderBottom:"3px solid #1BF26A",
-      position:"sticky",
+      position:"fixed",
       top:0,
+      left:0,
+      right:0,
       zIndex:300,
-      WebkitPosition:"sticky",
     }}>
 
       {/* Row 1: 3-column — left empty/spacer | center: logo | right: eth + wallet + X */}
@@ -483,6 +484,7 @@ export default function WheelPool(){
       </nav>
     </header>
 
+    <div style={{paddingTop:'90px'}}>
     {nav==="home"&&<>
       {/* ═══ HERO — image bg + interactive wheel overlay ═══ */}
       <section style={{position:"relative",overflow:"visible",paddingBottom:"clamp(32px,8vw,48px)"}}>
@@ -690,6 +692,7 @@ export default function WheelPool(){
       <div style={{color:"#c0f0d0",fontSize:"clamp(11px,2.2vw,14px)"}}> Built on Abstract Chain · NFT Tickets · Auto Payouts · Keeper + VRF + Paymaster</div>
     </footer>
 
+    </div>
     {mounted&&drawPool&&<DrawTheater onClose={()=>setDrawPool(null)}/>}
     {mounted&&mintPool&&<MintModal pool={mintPool} onClose={()=>setMintPool(null)} onMinted={t=>{setTickets(p=>[t,...p]);setMintPool(null);setNav("tickets");}}/>}
   </div>);}
