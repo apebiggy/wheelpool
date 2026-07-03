@@ -2,11 +2,17 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-// Dynamic import to avoid module init conflicts with wagmi/privy
 import dynamic from 'next/dynamic';
+
+// Dynamic imports — no SSR, avoids hydration mismatches
 const ConnectButton = dynamic(
   () => import('./components/ConnectButton').then(m => ({ default: m.ConnectButton })),
-  { ssr: false, loading: () => <div style={{color:'#44FF44',fontSize:10,fontFamily:"'Press Start 2P',monospace"}}>⚡ CONNECT</div> }
+  { ssr: false, loading: () => <span style={{color:'#44FF44',fontSize:10}}>⚡ CONNECT</span> }
+);
+
+const DrawTheaterFull = dynamic(
+  () => import('./components/DrawTheater'),
+  { ssr: false }
 );
 
 // ── Hero image (embedded) ───────────────────────────────────────
@@ -254,27 +260,13 @@ function PenguinSVG({skin="Classic",hat="None",acc="None",size=80}){
    DRAW THEATER
 ══════════════════════════════════════════════ */
 function DrawTheater({pool, userTickets, drawTime, onClose}){
-  const pf = parseFloat(pool.poolEth);
   return(
-    <div style={{
-      position:"fixed",inset:0,background:"#0d4a1e",
-      display:"flex",flexDirection:"column",
-      zIndex:1000,fontFamily:"'Press Start 2P',monospace",
-      alignItems:"center",justifyContent:"center",gap:20,
-    }}>
-      <div style={{color:"#FFDD00",fontSize:16}}>{pool.icon} {pool.name} DRAW</div>
-      <div style={{color:"#1BF26A",fontSize:10}}>Pool: {pool.poolEth} ETH</div>
-      <div style={{color:"#9de8b4",fontSize:9}}>Draw Theater loading...</div>
-      <button
-        onClick={onClose}
-        style={{
-          background:"#2a0808",border:"2px solid #FF4444",
-          color:"#FF4444",padding:"10px 20px",
-          cursor:"pointer",fontSize:10,
-          fontFamily:"'Press Start 2P',monospace",
-        }}
-      >← BACK</button>
-    </div>
+    <DrawTheaterFull
+      pool={pool}
+      userTickets={userTickets}
+      drawTime={drawTime}
+      onClose={onClose}
+    />
   );
 }
 
