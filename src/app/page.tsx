@@ -259,15 +259,8 @@ function PenguinSVG({skin="Classic",hat="None",acc="None",size=80}){
 /* ══════════════════════════════════════════════
    DRAW THEATER
 ══════════════════════════════════════════════ */
-function DrawTheater({pool, userTickets, drawTime, onClose}){
-  return(
-    <DrawTheaterFull
-      pool={pool}
-      userTickets={userTickets}
-      drawTime={drawTime}
-      onClose={onClose}
-    />
-  );
+function DrawTheater({onClose}){
+  return <DrawTheaterFull onClose={onClose}/>;
 }
 
 
@@ -697,7 +690,7 @@ export default function WheelPool(){
       <div style={{color:"#c0f0d0",fontSize:"clamp(11px,2.2vw,14px)"}}> Built on Abstract Chain · NFT Tickets · Auto Payouts · Keeper + VRF + Paymaster</div>
     </footer>
 
-    {mounted&&drawPool&&<DrawTheater pool={drawPool} userTickets={tickets} drawTime={drawPool?getNextSpin(drawPool.intervalH,drawPool.offsetMin):Date.now()+3600000} onClose={()=>setDrawPool(null)}/>}
+    {mounted&&drawPool&&<DrawTheater onClose={()=>setDrawPool(null)}/>}
     {mounted&&mintPool&&<MintModal pool={mintPool} onClose={()=>setMintPool(null)} onMinted={t=>{setTickets(p=>[t,...p]);setMintPool(null);setNav("tickets");}}/>}
   </div>);}
 
