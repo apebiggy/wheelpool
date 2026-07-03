@@ -290,8 +290,9 @@ function DrawTheater({pool,userTickets,drawTime,onClose}:{pool:any;userTickets:a
 
   const pf=parseFloat(pool.poolEth);
 
-  // ── DRAW HISTORY (last 10 draws for this pool) ───────────────
-  const drawHistory = useMemo(()=>{
+  // ── DRAW HISTORY — client only (avoids SSR/hydration mismatch) ──
+  const[drawHistory,setDrawHistory]=useState([]);
+  useEffect(()=>{
     const now = Date.now();
     const intervalMs = pool.intervalH * 3600000;
     const RANK = [{icon:"🥇",label:"JACKPOT",color:"#FFD700",pct:0.50},
@@ -300,23 +301,23 @@ function DrawTheater({pool,userTickets,drawTime,onClose}:{pool:any;userTickets:a
     const wallets = ["0xa0b1","0xc2d3","0xf4e5","0xa1b2","0xb3c4",
                      "0xd5e6","0xe7f8","0xf9a0","0x1234","0x5678",
                      "0x9abc","0xdef0","0x2468","0x1357","0xaced"];
-    return Array.from({length:10},(_,i)=>{
+    const history = Array.from({length:10},(_,i)=>{
       const drawId = 100 - i;
       const ts = now - (i+1)*intervalMs;
       const poolEth = parseFloat(pool.poolEth);
       return {
         id: drawId,
-        ts,
         date: new Date(ts).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}),
         time: new Date(ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),
         winners: RANK.map((r,ri)=>({
           ...r,
           addr: wallets[(i*3+ri)%wallets.length]+"..."+wallets[(i+ri+5)%wallets.length].slice(2),
-          eth: (poolEth * 0.9 * r.pct).toFixed(5),
+          eth: (poolEth*0.9*r.pct).toFixed(5),
         })),
       };
     });
-  },[pool]);
+    setDrawHistory(history);
+  },[pool.id]);
   const all=[...userTickets.filter(t=>t.poolId===pool.id),...genDemo(pool.id)];
   const myCount=userTickets.filter(t=>t.poolId===pool.id).length;
 
