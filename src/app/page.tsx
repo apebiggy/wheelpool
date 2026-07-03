@@ -285,7 +285,7 @@ function DrawTheater({pool,userTickets,drawTime,onClose}:{pool:any;userTickets:a
   },[phase,drawTime,autoFired]);// eslint-disable-line
 
   // Ref to always have latest simulate (avoids stale closure in setTimeout)
-  const simulateRef = useRef<()=>void>(()=>{});
+  const simulateRef = useRef(()=>{} as ()=>void);
   useEffect(()=>{ simulateRef.current = simulate; },[simulate]);
 
   const pf=parseFloat(pool.poolEth);
