@@ -14,11 +14,11 @@ const HERO = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQg
 const POOLS=[
   {id:"spin",  name:"SPIN",  icon:"🎡",entryUsd:2,  entryEth:"0.0008",intervalH:1,  label:"EVERY HOUR",    offsetMin:0,
    color:"#FF6633",darkBg:"#1a0800",accent:"#FF9966",glow:"rgba(255,102,51,.4)",entries:47,poolEth:"0.0376",jackpot:"0.0169"},
-  {id:"surge", name:"SURGE", icon:"🌊",entryUsd:5,  entryEth:"0.002", intervalH:6,  label:"EVERY 6 HOURS", offsetMin:5,
+  {id:"surge", name:"SURGE", icon:"🌊",entryUsd:5,  entryEth:"0.002", intervalH:6,  label:"EVERY 6 HOURS", offsetMin:0,
    color:"#00DDAA",darkBg:"#0a2a08",accent:"#44FFCC",glow:"rgba(0,221,170,.4)",  entries:83,poolEth:"0.166", jackpot:"0.0747"},
-  {id:"twelve",name:"TWELVE",icon:"🔥",entryUsd:10, entryEth:"0.004", intervalH:12, label:"EVERY 12 HOURS",offsetMin:15,
+  {id:"twelve",name:"TWELVE",icon:"🔥",entryUsd:10, entryEth:"0.004", intervalH:12, label:"EVERY 12 HOURS",offsetMin:0,
    color:"#AA44FF",darkBg:"#0e0020",accent:"#CC88FF",glow:"rgba(170,68,255,.4)", entries:38,poolEth:"0.380", jackpot:"0.1710"},
-  {id:"mega",  name:"MEGA",  icon:"⚡",entryUsd:25, entryEth:"0.01",  intervalH:24, label:"DAILY",         offsetMin:20,
+  {id:"mega",  name:"MEGA",  icon:"⚡",entryUsd:25, entryEth:"0.01",  intervalH:24, label:"DAILY",         offsetMin:0,
    color:"#FFDD00",darkBg:"#1a1600",accent:"#FFE944",glow:"rgba(255,221,0,.4)",  entries:29,poolEth:"0.290", jackpot:"0.1305"},
 ];
 const PRIZE_SLOTS=[
