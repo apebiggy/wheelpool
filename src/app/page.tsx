@@ -281,7 +281,7 @@ function MintModal({pool,onClose,onMinted}){
           <div>· Unique pixel penguin minted on-chain</div>
           <div>· 1 ticket = 1 entry — buy more for better odds</div>
           <div style={{color:"#44FF44"}}>· Buy 2+ tickets in one pool — each can win a different prize slot
-            <div style={{color:"#1BF26A",marginTop:4}}>· Buy 2+ tickets in one pool for multiple prize chances</div></div>
+            <div style={{color:"#1BF26A",marginTop:4}}>· Winners receive ETH automatically — no claiming needed</div></div>
         </div>
         <div style={{display:"flex",gap:8}}>
           <button onClick={go} style={{flex:1,padding:13,background:"#1a6a28",color:"#fff",border:"none",cursor:"pointer",fontSize:12,borderBottom:`3px solid ${pool.color}`,outline:"none"}}>⛏ MINT NOW</button>
@@ -512,7 +512,7 @@ export default function WheelPool(){
           WIN ETH ON <span style={{color:"#1BF26A",textShadow:"0 0 20px #1BF26A"}}>ABSTRACT CHAIN</span>
         </div>
         <div style={{color:"#c0f0d0",fontSize:"clamp(16px,4vw,20px)",marginBottom:24,fontFamily:"'Press Start 2P',monospace"}}>
-          Mint NFT tickets · Auto draw · Instant payouts · Zero gas for winners
+          Mint NFT tickets · Auto draw · Instant payouts · Winners receive ETH gas-free
         </div>
         <div style={{display:"flex",justifyContent:"center",gap:12,flexWrap:"wrap"}}>
           <button onClick={()=>typeof document!=="undefined"&&document.getElementById("pools")?.scrollIntoView({behavior:"smooth"})}
@@ -614,7 +614,7 @@ export default function WheelPool(){
               ["📤","EXECUTE TX","executeDraw() called. Pool closes. No more ticket mints accepted.","#1BF26A"],
               ["🔮","VRF REQUEST","Contract requests verifiable random seed. 1–2 blocks.","#4499FF"],
               ["🎲","WINNERS SET","VRF seed selects winners. Committed to contract. Immutable.","#AA44FF"],
-              ["💸","AUTO PAY","ETH sent to all winners + treasury in same tx.","#FFD700"],
+              ["💸","AUTO PAY","ETH sent to winners + treasury in same tx. Winner gas covered by paymaster.","#FFD700"],
             ].map(([ic,t,d,c],i,arr)=>(
               <div key={t} style={{flex:"1 1 130px",background:"#0e2008",border:`1px solid ${c}22`,borderLeft:`3px solid ${c}`,padding:"12px 10px",marginBottom:4}}>
                 <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
@@ -656,17 +656,15 @@ export default function WheelPool(){
           </div>
           {/* Abstract Chain paymaster callout */}
           <div style={{background:"#0e2008",border:"1px solid #1BF26A55",padding:"16px",marginBottom:10}}>
-            <div style={{color:"#1BF26A",fontSize:12,marginBottom:10,letterSpacing:1}}>⚡ ABSTRACT CHAIN PAYMASTER</div>
+            <div style={{color:"#1BF26A",fontSize:12,marginBottom:10,letterSpacing:1}}>⚡ SELECTIVE GAS SPONSORSHIP</div>
             <div style={{fontSize:10,color:"#b0edca",lineHeight:2.4,marginBottom:12}}>
-              Abstract Chain's native account abstraction lets the protocol sponsor gas on behalf of winners.
-              When you receive your prize, <span style={{color:"#1BF26A"}}>you pay zero gas</span> — not even to receive ETH.
-              The paymaster is funded from the 10% ops budget.
+              Abstract Chain's paymaster selectively sponsors gas — <span style={{color:"#1BF26A"}}>only protocol-side transactions</span>. Winner payouts are covered. Minting tickets and claiming refunds use your own gas.
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:5}}>
               {[
                 ["🤖","KEEPER GAS","Bot calls executeDraw() at draw time","~2–3%"],
                 ["🔮","CHAINLINK VRF","Cost of verifiable random seed per draw","~1–2%"],
-                ["⛽","PAYMASTER","Sponsors winner gas — zero friction payouts","~1–2%"],
+                ["⛽","PAYMASTER","Sponsors winner payouts only — not minting or refunds","~1–2%"],
                 ["📈","PROTOCOL REVENUE","Funds dev, liquidity, team","remainder"],
               ].map(([ic,t,d,pct])=>(
                 <div key={t} style={{display:"flex",alignItems:"center",gap:8,background:"#0e2008",padding:"7px 10px",borderLeft:"2px solid #1BF26A44"}}>
@@ -689,7 +687,7 @@ export default function WheelPool(){
 
     <footer style={{background:"#0d4a1e",borderTop:"3px solid #1BF26A",padding:"32px 20px",textAlign:"center"}}>
       <div style={{fontSize:16,letterSpacing:2,marginBottom:7}}><span style={{color:"#FFDD00"}}>Wheel</span><span style={{color:"#44FF44"}}>Pool</span></div>
-      <div style={{color:"#c0f0d0",fontSize:"clamp(11px,2.2vw,14px)"}}> Built on Abstract Chain · NFT Tickets · Auto Payouts · Keeper + VRF + Paymaster</div>
+      <div style={{color:"#c0f0d0",fontSize:"clamp(11px,2.2vw,14px)"}}> Built on Abstract Chain · NFT Tickets · Auto Payouts · Protocol-Sponsored Winners · VRF Randomness</div>
     </footer>
 
     </div>
