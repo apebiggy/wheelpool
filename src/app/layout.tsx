@@ -1,10 +1,10 @@
-import type { Metadata } from 'next';
-import { Providers } from './providers';
-import './globals.css';
+import type { Metadata } from "next";
+import { NextAbstractWalletProvider } from "./components/agw-provider";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'WheelPool',
-  description: 'On-chain prize pool on Abstract Chain',
+  title: "WheelPool",
+  description: "On-chain prize pool dApp on Abstract Chain",
 };
 
 export default function RootLayout({
@@ -15,9 +15,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Providers>
+        <NextAbstractWalletProvider>
           {children}
-        </Providers>
+        </NextAbstractWalletProvider>
       </body>
     </html>
   );
