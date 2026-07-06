@@ -5,16 +5,6 @@ import { useAccount, useConnect, useDisconnect, useBalance } from "wagmi";
 import { abstractWalletConnector } from "@abstract-foundation/agw-react/connectors";
 import { formatUnits } from "viem";
 
-function AGWLogo({ size = 18 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <circle cx="16" cy="16" r="16" fill="#000"/>
-      <path d="M16 5 L26 27 H19.5 L16 19.5 L12.5 27 H6 Z" fill="#1BF26A"/>
-      <path d="M10 22 H22" stroke="#000" strokeWidth="3.5"/>
-    </svg>
-  );
-}
-
 export function ConnectButton() {
   const { login, logout } = useLoginWithAbstract();
   const { address, status, connector } = useAccount();
@@ -67,18 +57,15 @@ export function ConnectButton() {
   return (
     <button
       onClick={() => connect({ connector: abstractWalletConnector() })}
-      title="Connect with Abstract Global Wallet"
       style={{
         background: "#0d4a1e", border: "2px solid #1BF26A",
-        color: "#1BF26A", padding: "8px 14px",
-        cursor: "pointer", fontSize: "clamp(9px,2vw,10px)",
+        color: "#1BF26A", padding: "8px 16px",
+        cursor: "pointer", fontSize: "clamp(9px,2vw,11px)",
         fontFamily: "'Press Start 2P', monospace",
-        whiteSpace: "nowrap", outline: "none",
-        display: "flex", alignItems: "center", gap: "7px",
+        whiteSpace: "nowrap", outline: "none", letterSpacing: "1px",
       }}
     >
-      <AGWLogo size={16}/>
-      CONNECT
+      CONNECT AGW
     </button>
   );
 }
