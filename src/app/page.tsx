@@ -437,27 +437,27 @@ export default function WheelPool(){
     }}>
 
       {/* Row 1: 3-column — left empty/spacer | center: logo | right: eth + wallet + X */}
-      <div style={{display:"flex",alignItems:"center",padding:"10px 14px",gap:6}}>
+      <div className="header-row1" style={{display:"flex",alignItems:"center",padding:"10px 14px",gap:6,flexWrap:"wrap"}}>
 
-        {/* Left spacer — mirrors right side width so logo stays centered */}
-        <div style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:6}}>
-          {/* placeholder keeps layout balanced */}
-        </div>
-
-        {/* Center: WheelPool — absolutely centered */}
-        <div onClick={()=>setNav("home")} style={{
-          flexShrink:0,
+        {/* Logo — always centered */}
+        <div className="header-logo" onClick={()=>setNav("home")} style={{
+          flex:"1 1 auto",
+          display:"flex",justifyContent:"center",alignItems:"center",
+          cursor:"pointer",
           fontSize:"clamp(18px,3.8vw,40px)",
-          letterSpacing:2,cursor:"pointer",
-          whiteSpace:"nowrap",lineHeight:1.2,
-          textAlign:"center",
+          letterSpacing:2,lineHeight:1.2,
+          whiteSpace:"nowrap",
+          order:1,
         }}>
           <span style={{color:"#FFDD00"}}>Wheel</span>
           <span style={{color:"#44FF44"}}>Pool</span>
         </div>
 
-        {/* Right: wallet connection */}
-        <div style={{flex:1,minWidth:0,display:"flex",alignItems:"center",justifyContent:"flex-end",gap:6}}>
+        {/* Wallet — right on desktop, new line on mobile */}
+        <div className="header-wallet" style={{
+          display:"flex",alignItems:"center",justifyContent:"flex-end",
+          order:2,
+        }}>
           <ConnectButton />
         </div>
       </div>
@@ -484,7 +484,7 @@ export default function WheelPool(){
       </nav>
     </header>
 
-    <div style={{paddingTop:'88px'}}>
+    <div className="content-area" style={{paddingTop:"88px"}}>
     {nav==="home"&&<>
       {/* ═══ HERO — image bg + interactive wheel overlay ═══ */}
       <section style={{position:"relative",overflow:"visible",paddingBottom:"clamp(32px,8vw,48px)"}}>

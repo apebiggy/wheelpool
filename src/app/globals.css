@@ -52,3 +52,35 @@ header {
   80%  { opacity: 1; }
   100% { transform: translateY(110vh) rotate(720deg) scale(0.5);  opacity: 0; }
 }
+
+/* ── Header responsive layout ────────────────── */
+
+/* Desktop: logo left-center, wallet right, single row */
+.header-logo  { flex: 1 1 auto; text-align: center; }
+.header-wallet { flex: 0 0 auto; }
+
+/* Mobile: logo full width centered, wallet below full width centered */
+@media (max-width: 600px) {
+  .header-row1 {
+    flex-direction: column !important;
+    align-items: center !important;
+    padding: 8px 12px !important;
+    gap: 8px !important;
+  }
+  .header-logo {
+    width: 100%;
+    justify-content: center;
+    font-size: clamp(20px, 6vw, 28px) !important;
+  }
+  .header-wallet {
+    width: 100%;
+    justify-content: center;
+  }
+  /* Compact paddingTop since header is taller on mobile */
+  .content-area { padding-top: 120px !important; }
+}
+
+/* Hide ETH balance on small screens — address alone is enough */
+@media (max-width: 480px) {
+  .wallet-balance { display: none !important; }
+}
