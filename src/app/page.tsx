@@ -423,7 +423,7 @@ export default function WheelPool(){
   const ms=p=>getNextSpin(p.intervalH,p.offsetMin)-now;
   const myT=id=>tickets.filter(t=>t.poolId===id);
 
-  return(<div style={{fontFamily:"'Press Start 2P',monospace",background:"#0d4a1e",color:"#fff",minHeight:"100vh",overflowX:"hidden"}}>
+  return(<div style={{fontFamily:"'Press Start 2P',monospace",background:"#0d4a1e",color:"#fff",minHeight:"100vh"}}>
 
     {/* HEADER — sticky, two-row */}
     <header style={{
@@ -484,7 +484,7 @@ export default function WheelPool(){
       </nav>
     </header>
 
-    <div style={{paddingTop:'90px'}}>
+    <div style={{paddingTop:'88px'}}>
     {nav==="home"&&<>
       {/* ═══ HERO — image bg + interactive wheel overlay ═══ */}
       <section style={{position:"relative",overflow:"visible",paddingBottom:"clamp(32px,8vw,48px)"}}>
@@ -553,7 +553,7 @@ export default function WheelPool(){
           <h2 style={{textAlign:"center",fontSize:"clamp(24px,6vw,34px)",color:"#FFDD00",textShadow:"3px 3px 0 #000",letterSpacing:2,marginBottom:8}}>🎰 CHOOSE A POOL</h2>
           <div style={{textAlign:"center",color:"#c0f0d0",fontSize:"clamp(16px,4vw,20px)",marginBottom:28}}>Draws every 1H · 6H · 24H &nbsp;·&nbsp; More tickets = better odds &nbsp;·&nbsp; One ticket can win multiple prizes</div>
           <div style={{display:"flex",gap:18,justifyContent:"center",flexWrap:"wrap"}}>
-            {POOLS.map(pool=>(<PoolCard key={pool.id} pool={pool} msLeft={ms(pool)} myTickets={myT(pool.id)} onMint={()=>{if(!connected)connect();setMintPool(pool);}} onDraw={()=>setDrawPool(pool)}/>))}
+            {POOLS.map(pool=>(<PoolCard key={pool.id} pool={pool} msLeft={ms(pool)} myTickets={myT(pool.id)} onMint={()=>setMintPool(pool)} onDraw={()=>setDrawPool(pool)}/>))}
           </div>
         </div>
       </section>
