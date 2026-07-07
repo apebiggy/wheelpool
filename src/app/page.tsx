@@ -422,55 +422,272 @@ function PoolCard({pool,msLeft,myTickets,onMint,onDraw}){
 /* ══════════════════════════════════════════════
    TICKET CARD
 ══════════════════════════════════════════════ */
-function TicketCard({ticket}){
-  const pool=POOLS.find(p=>p.id===ticket.poolId)||POOLS[0];
-  const ts=new Date(ticket.ts);
-  const dateStr=ts.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
-  const timeStr=ts.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  return(
-    <div style={{
-      background:"linear-gradient(160deg,#0e3a0e,#145414)",
-      border:`2px solid ${pool.color}55`,
-      borderTop:`3px solid ${pool.color}`,
-      borderBottom:`3px solid ${pool.color}55`,
-      padding:"14px",width:170,flexShrink:0,
-      boxShadow:`0 0 12px ${pool.color}18`,
-      fontFamily:"'Press Start 2P',monospace",
-    }}>
-      {/* Pool header */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-        <span style={{color:pool.color,fontSize:11}}>{pool.icon} {pool.name}</span>
-        <span style={{color:"#44FF44",background:"#44FF4418",padding:"2px 5px",fontSize:8}}>LIVE</span>
-      </div>
-      {/* Entry fee */}
-      <div style={{
-        textAlign:"center",padding:"10px 0",marginBottom:10,
-        borderTop:`1px solid ${pool.color}33`,
-        borderBottom:`1px solid ${pool.color}33`,
-      }}>
-        <div style={{color:pool.color,fontSize:22,fontFamily:"'VT323',monospace",lineHeight:1}}>${pool.entryUsd}</div>
-        <div style={{color:"#9de8b4",fontSize:8,marginTop:4}}>{pool.entryEth} ETH</div>
-      </div>
-      {/* Draw info */}
-      <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:10}}>
-        <div style={{display:"flex",justifyContent:"space-between"}}>
-          <span style={{color:"#6aaa6a",fontSize:8}}>DRAW</span>
-          <span style={{color:"#9de8b4",fontSize:8}}>{pool.label}</span>
-        </div>
-        <div style={{display:"flex",justifyContent:"space-between"}}>
-          <span style={{color:"#6aaa6a",fontSize:8}}>ENTERED</span>
-          <span style={{color:"#9de8b4",fontSize:8}}>{dateStr} {timeStr}</span>
-        </div>
-      </div>
-      {/* Ticket ID */}
-      <div style={{
-        borderTop:`1px solid ${pool.color}22`,
-        paddingTop:7,
-        color:"#6aaa6a",fontSize:7,
-        fontFamily:"monospace",
-        wordBreak:"break-all",
-      }}>{ticket.id}</div>
-    </div>
-  );
-}
 
+function WheelPool(){
+  const[now,setNow]=useState(Date.now());
+  const connected=false;const wallet="";const ethBalance="0.0000";
+  const[ethPrice,setEthPrice]=useState(3000);
+  const[priceLoading,setPriceLoading]=useState(true);
+  const[mounted,setMounted]=useState(false);
+  useEffect(()=>setMounted(true),[]);
+  useEffect(()=>{
+    const fp=async()=>{try{const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');const d=await r.json();if(d.ethereum?.usd)setEthPrice(d.ethereum.usd);}catch(e){}finally{setPriceLoading(false);}};
+    fp();const id=setInterval(fp,300000);return()=>clearInterval(id);
+  },[]);
+  const[wheelSize,setWheelSize]=useState(190);
+  useEffect(()=>{
+    const onResize=()=>setWheelSize(window.innerWidth>768?290:190);
+    window.addEventListener("resize",onResize);
+    return()=>window.removeEventListener("resize",onResize);
+  },[]);
+  const[tickets,setTickets]=useState([]);
+  const[mintPool,setMintPool]=useState(null);
+  const[drawPool,setDrawPool]=useState(null);
+  const[nav,setNav]=useState("home");
+  useEffect(()=>{const id=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(id);},[]);
+
+  const ms=p=>getNextSpin(p.intervalH,p.offsetMin)-now;
+  const myT=id=>tickets.filter(t=>t.poolId===id);
+
+  return(<div style={{fontFamily:"'Press Start 2P',monospace",background:"#0d4a1e",color:"#fff",minHeight:"100vh",overflowX:"hidden"}}>
+
+    {/* HEADER — sticky, two-row */}
+    <header style={{
+      background:"rgba(12,60,24,.98)",
+      borderBottom:"3px solid #1BF26A",
+      position:"sticky",
+      top:0,
+      zIndex:300,
+      WebkitPosition:"sticky",
+    }}>
+
+      {/* Row 1: 3-column — left empty/spacer | center: logo | right: eth + wallet + X */}
+      <div style={{display:"flex",alignItems:"center",padding:"10px 14px",gap:6}}>
+
+        <div className="header-logo" onClick={()=>setNav("home")} style={{flex:"1 1 auto",display:"flex",justifyContent:"center",alignItems:"center",cursor:"pointer",fontSize:"clamp(18px,3.8vw,40px)",letterSpacing:2,lineHeight:1.2,whiteSpace:"nowrap",order:1}}>
+          <span style={{color:"#FFDD00"}}>Wheel</span>
+          <span style={{color:"#44FF44"}}>Pool</span>
+        </div>
+
+                <div className="header-wallet" style={{flex:"0 0 auto",display:"flex",alignItems:"center",justifyContent:"flex-end",order:2}}>
+          <ConnectButton />
+        </div>
+      </div>
+
+      {/* Row 2: nav — full width, equal tabs */}
+      <nav style={{
+        display:"flex",
+        borderTop:"1px solid rgba(27,242,106,.22)",
+        background:"rgba(8,50,8,.6)",
+      }}>
+        {[["home","🎡 POOLS"],["tickets","🎟 TICKETS"],["how","📖 HOW"]].map(([k,l])=>(
+          <button key={k} onClick={()=>setNav(k)} className="nav-item" style={{
+            flex:1,
+            background:"none",border:"none",cursor:"pointer",
+            color:nav===k?"#FFDD00":"#9de8b4",
+            padding:"9px 4px",
+            fontFamily:"'Press Start 2P',monospace",
+            fontSize:"clamp(11px,2.8vw,16px)",
+            letterSpacing:1,
+            borderBottom:nav===k?"3px solid #FFDD00":"3px solid transparent",
+            transition:"color .15s, border-color .15s",
+          }}>{l}</button>
+        ))}
+      </nav>
+    </header>
+
+    {nav==="home"&&<>
+      {/* ═══ HERO — image bg + interactive wheel overlay ═══ */}
+      <section style={{position:"relative",overflow:"visible",paddingBottom:"clamp(32px,8vw,48px)"}}>
+        {/* background image */}
+        <img src={HERO} alt="WheelPool" style={{width:"100%",display:"block",maxHeight:480,objectFit:"cover",objectPosition:"center top"}}/>
+
+        {/* dark gradient so text/wheel are readable */}
+        <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(0,0,0,.0) 0%,rgba(0,0,0,.05) 50%,rgba(10,60,10,.92) 100%)"}}/>
+        
+
+        {/* interactive wheel — smaller, sits over image wheel, WheelPool banner stays visible */}
+        <div style={{
+          position:"absolute",
+          top:"54%", left:"50%",
+          transform:"translate(-50%, -50%)",
+          zIndex:3,
+        }}>
+          <InteractiveWheel size={wheelSize}/>
+        </div>
+      </section>
+
+      {/* ── TITLE + CTA dark band directly below hero ── */}
+      <div style={{background:"linear-gradient(180deg,#0f5422 0%,#1a6830 100%)",padding:"36px 20px 32px",textAlign:"center",borderBottom:"2px solid #3a7a22"}}>
+        <div style={{fontSize:"clamp(22px,6vw,36px)",color:"#fff",letterSpacing:3,marginBottom:8,fontFamily:"'Press Start 2P',monospace",textShadow:"0 0 30px rgba(27,242,106,.35)"}}>
+          WIN ETH ON <span style={{color:"#1BF26A",textShadow:"0 0 20px #1BF26A"}}>ABSTRACT CHAIN</span>
+        </div>
+        <div style={{color:"#c0f0d0",fontSize:"clamp(16px,4vw,20px)",marginBottom:24,fontFamily:"'Press Start 2P',monospace"}}>
+          Mint NFT tickets · Auto draw · Instant payouts · Zero gas for winners
+        </div>
+        <div style={{display:"flex",justifyContent:"center",gap:12,flexWrap:"wrap"}}>
+          <button onClick={()=>typeof document!=="undefined"&&document.getElementById("pools")?.scrollIntoView({behavior:"smooth"})}
+            style={{background:"#c44400",color:"#fff",border:"none",padding:"15px 26px",fontSize:"clamp(11px,2.8vw,14px)",cursor:"pointer",fontFamily:"'Press Start 2P',monospace",borderBottom:"4px solid #FF9900",outline:"none",boxShadow:"0 0 28px rgba(196,68,0,.45)"}}>
+            🎟 MINT A TICKET
+          </button>
+          <button onClick={()=>setDrawPool(POOLS[3])}
+            style={{background:"transparent",color:"#FFDD00",border:"2px solid #FFDD00",padding:"15px 26px",fontSize:"clamp(11px,2.8vw,14px)",cursor:"pointer",fontFamily:"'Press Start 2P',monospace",outline:"none",boxShadow:"0 0 20px rgba(255,221,0,.2)"}}>
+            🎲 WATCH A DRAW
+          </button>
+        </div>
+      </div>
+
+      {/* how it works — 3 steps */}
+      <div style={{background:"#0f5422",borderBottom:"2px solid #3a7a22",padding:"28px 20px"}}>
+        <div style={{maxWidth:860,margin:"0 auto",display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(220px,80vw),1fr))",gap:20}}>
+          {[["🎟","BUY TICKETS","4 pools: $2 · $5 · $10 · $25. 1 ticket = 1 entry. More tickets = better odds."],
+            ["🎰","4 POOLS, 3 PRIZES","Draws every 1H · 6H · 12H · 24H. 3 independent winners per draw. Buy more tickets for more chances."],
+            ["💰","PRIZES STACK","🥇 50% · 🥈 25% · 🥉 15% · 10% ops. Win multiple slots? All prizes paid in full."],
+          ].map(([ic,t,d])=>(
+            <div key={t} style={{textAlign:"center",padding:"24px 12px"}}>
+              <div style={{fontSize:"clamp(60px,14vw,84px)",marginBottom:24,lineHeight:1}}>{ic}</div>
+              <div style={{color:"#FFDD00",fontSize:"clamp(12px,3vw,16px)",marginBottom:12,letterSpacing:1}}>{t}</div>
+              <div style={{color:"#c0f0d0",fontSize:"clamp(11px,2.2vw,14px)",lineHeight:2.2}}>{d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* stats */}
+      <div style={{display:"flex",justifyContent:"space-around",flexWrap:"wrap",background:"#0f5422",borderBottom:"2px solid #3a7a22",padding:"12px",gap:12}}>
+        {[["ETH PRICE",priceLoading?"...":"$"+ethPrice.toLocaleString(),"#1BF26A"],["TICKETS LIVE","2,341","#44FF44"],["ETH LOCKED","4.2 ETH","#FFDD00"],["DRAWS TODAY","72","#FF9933"]].map(([l,v,c])=>(<div key={l} style={{textAlign:"center"}}><div style={{color:"#c0f0d0",fontSize:"clamp(11px,2.2vw,14px)"}}> {l}</div><div style={{color:c,fontSize:18,marginTop:6,fontFamily:"'VT323',monospace"}}>{v}</div></div>))}
+      </div>
+
+      {/* pools */}
+      <section id="pools" style={{padding:"48px 20px",background:"linear-gradient(180deg,#145414,#0d4a1e)"}}>
+        <div style={{maxWidth:1060,margin:"0 auto"}}>
+          <h2 style={{textAlign:"center",fontSize:"clamp(24px,6vw,34px)",color:"#FFDD00",textShadow:"3px 3px 0 #000",letterSpacing:2,marginBottom:8}}>🎰 CHOOSE A POOL</h2>
+          <div style={{textAlign:"center",color:"#c0f0d0",fontSize:"clamp(16px,4vw,20px)",marginBottom:28}}>Draws every 1H · 6H · 24H &nbsp;·&nbsp; More tickets = better odds &nbsp;·&nbsp; One ticket can win multiple prizes</div>
+          <div style={{display:"flex",gap:18,justifyContent:"center",flexWrap:"wrap"}}>
+            {POOLS.map(pool=>(<PoolCard key={pool.id} pool={pool} msLeft={ms(pool)} myTickets={myT(pool.id)} onMint={()=>setMintPool(pool)} onDraw={()=>setDrawPool(pool)}/>))}
+          </div>
+        </div>
+      </section>
+    </>}
+
+    {nav==="tickets"&&<section style={{padding:"48px 20px",maxWidth:1060,margin:"0 auto"}}>
+      <h2 style={{textAlign:"center",fontSize:"clamp(20px,5vw,30px)",color:"#FFDD00",letterSpacing:2,marginBottom:6}}>🎟 MY ENTRIES</h2>
+      <div style={{textAlign:"center",color:"#c0f0d0",fontSize:"clamp(12px,3vw,16px)",marginBottom:28}}>{tickets.length} entr{tickets.length===1?"y":"ies"}</div>
+      {tickets.length===0?(<div style={{textAlign:"center",padding:"50px 0"}}>
+        <div style={{fontSize:44,marginBottom:24}}>🎟</div>
+        <div style={{color:"#9de8b4",fontSize:11,fontFamily:"'Press Start 2P',monospace",marginBottom:16}}>No entries yet</div>
+        <button onClick={()=>setNav("home")} style={{background:"#c44400",color:"#fff",border:"none",padding:"13px 20px",cursor:"pointer",fontSize:11,fontFamily:"'Press Start 2P',monospace",borderBottom:"4px solid #FF9900",outline:"none"}}>ENTER A POOL</button>
+      </div>):(<TicketSections tickets={tickets} pools={POOLS} ethPrice={ethPrice} onMint={p=>setMintPool(p)} onDraw={p=>setDrawPool(p)} msLeft={ms} fmtMs={fmtMs}/>)}
+    </section>}
+    {nav==="how"&&<section style={{padding:"48px 20px",background:"#0d4a1e"}}>
+      <div style={{maxWidth:900,margin:"0 auto"}}>
+        <h2 style={{textAlign:"center",fontSize:"clamp(24px,6vw,34px)",color:"#FFDD00",letterSpacing:2,marginBottom:36}}>📖 HOW IT WORKS</h2>
+
+        {/* 6-card grid */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:14,marginBottom:36}}>
+          {[
+            ["🎟","1 TICKET = 1 ENTRY","Pay ETH to mint an NFT ticket. More tickets = better odds. Minimum 3 tickets for a draw to run.","#FF6633"],
+            ["⛓","AUTO DRAW","Keeper bot calls executeDraw() on Abstract Chain at scheduled time. Fully automatic — no manual trigger.","#1BF26A"],
+            ["🔮","VERIFIABLE RANDOM","Chainlink VRF generates a tamper-proof random seed. Results committed on-chain before any animation plays.","#4499FF"],
+            ["🎬","WHEEL = REPLAY","The spinning wheel is cosmetic. Results were already final on-chain. It's a replay, not the actual draw.","#FFDD00"],
+            ["💸","INSTANT PAYOUT","Winners receive ETH automatically in the same tx as the draw. No claiming. No waiting.","#1BF26A"],
+            ["🐧","NFT COLLECTIBLES","Unique pixel penguin per ticket. Winning tickets get a crown burned on-chain — permanent proof.","#AA44FF"],
+          ].map(([ic,t,d,c])=>(
+            <div key={t} style={{background:"#091409",border:`1px solid ${c}33`,borderTop:`3px solid ${c}`,padding:"18px"}}>
+              <div style={{fontSize:24,marginBottom:18,lineHeight:1}}>{ic}</div>
+              <div style={{color:c,fontSize:11,marginBottom:8,letterSpacing:1}}>{t}</div>
+              <div style={{color:"#9de8b4",fontSize:10,lineHeight:2}}>{d}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* On-chain flow */}
+        <div style={{background:"#0e2008",border:"1px solid #1BF26A33",padding:"20px",marginBottom:20}}>
+          <div style={{color:"#1BF26A",fontSize:13,marginBottom:18,letterSpacing:1}}>⛓ ON-CHAIN DRAW FLOW</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+            {[
+              ["⏱","DRAW TIME","Keeper detects scheduled draw time on Abstract Chain","#FFDD00"],
+              ["📤","EXECUTE TX","executeDraw() called. Pool closes. No more ticket mints accepted.","#1BF26A"],
+              ["🔮","VRF REQUEST","Contract requests verifiable random seed. 1–2 blocks.","#4499FF"],
+              ["🎲","WINNERS SET","VRF seed selects winners. Committed to contract. Immutable.","#AA44FF"],
+              ["💸","AUTO PAY","ETH sent to all winners + treasury in same tx.","#FFD700"],
+            ].map(([ic,t,d,c],i,arr)=>(
+              <div key={t} style={{flex:"1 1 130px",background:"#0e2008",border:`1px solid ${c}22`,borderLeft:`3px solid ${c}`,padding:"12px 10px",marginBottom:4}}>
+                <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
+                  <span style={{fontSize:14,marginBottom:10}}>{ic}</span>
+                  <span style={{color:c,fontSize:10}}>{t}</span>
+                </div>
+                <div style={{color:"#9de8b4",fontSize:10,lineHeight:1.8}}>{d}</div>
+                {i<arr.length-1&&<div style={{color:c,fontSize:14,marginTop:6,opacity:.5}}>→</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Prize split + reward table */}
+        <div style={{background:"#091409",border:"2px solid #FFDD00",padding:"20px"}}>
+          <div style={{color:"#FFDD00",fontSize:13,marginBottom:14}}>💸 PRIZE SPLIT & REWARD DISTRIBUTION</div>
+          <div style={{display:"flex",height:48,overflow:"hidden",border:"1px solid #3a7a22",marginBottom:16}}>
+            {[["10%","OPS+PROTO","#FF4444",10],["50%","🥇 JACKPOT","#FFD700",50],["25%","🥈 2ND","#C0C0C0",25],["15%","🥉 3RD","#CD7F32",15]].map(([p,l,bg,w])=>(
+              <div key={l} style={{width:`${w}%`,background:bg,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+                <span style={{fontSize:10,color:"#000",fontFamily:"'Press Start 2P',monospace",padding:"0 2px",textAlign:"center",lineHeight:1.5}}>{p}<br/>{l}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:14}}>
+            {[
+              ["🥇","JACKPOT WINNER","50% of pool","Sent to winner wallet. Same transaction as draw.","#FFD700"],
+              ["🥈","2ND PLACE","25% of pool","Sent to winner wallet. Same transaction as draw.","#C0C0C0"],
+              ["🥉","3RD PLACE","15% of pool","Sent to winner wallet. Same transaction as draw.","#CD7F32"],
+              ["⚙","OPS + PROTOCOL","10% of pool","Covers: keeper gas, Chainlink VRF, Abstract paymaster + protocol revenue.","#FF6644"],
+            ].map(([ic,l,p,note,c])=>(
+              <div key={l} style={{display:"flex",alignItems:"center",gap:8,background:"#0e2008",padding:"8px 12px",borderLeft:`3px solid ${c}`}}>
+                <span style={{fontSize:14,flexShrink:0}}>{ic}</span>
+                <span style={{color:c,fontSize:10,flexShrink:0,width:90}}>{l}</span>
+                <span style={{color:"#FFDD00",fontSize:10,flexShrink:0,width:70}}>{p}</span>
+                <span style={{color:"#9de8b4",fontSize:10,flex:1}}>{note}</span>
+                <span style={{color:"#1BF26A",fontSize:10,flexShrink:0}}>✓ AUTO</span>
+              </div>
+            ))}
+          </div>
+          {/* Abstract Chain paymaster callout */}
+          <div style={{background:"#0e2008",border:"1px solid #1BF26A55",padding:"16px",marginBottom:10}}>
+            <div style={{color:"#1BF26A",fontSize:12,marginBottom:10,letterSpacing:1}}>⚡ ABSTRACT CHAIN PAYMASTER</div>
+            <div style={{fontSize:10,color:"#b0edca",lineHeight:2.4,marginBottom:12}}>
+              Abstract Chain's native account abstraction lets the protocol sponsor gas on behalf of winners.
+              When you receive your prize, <span style={{color:"#1BF26A"}}>you pay zero gas</span> — not even to receive ETH.
+              The paymaster is funded from the 10% ops budget.
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:5}}>
+              {[
+                ["🤖","KEEPER GAS","Bot calls executeDraw() at draw time","~2–3%"],
+                ["🔮","CHAINLINK VRF","Cost of verifiable random seed per draw","~1–2%"],
+                ["⛽","PAYMASTER","Sponsors winner gas — zero friction payouts","~1–2%"],
+                ["📈","PROTOCOL REVENUE","Funds dev, liquidity, team","remainder"],
+              ].map(([ic,t,d,pct])=>(
+                <div key={t} style={{display:"flex",alignItems:"center",gap:8,background:"#0e2008",padding:"7px 10px",borderLeft:"2px solid #1BF26A44"}}>
+                  <span style={{fontSize:16,flexShrink:0}}>{ic}</span>
+                  <span style={{color:"#1BF26A",fontSize:10,flexShrink:0,width:90}}>{t}</span>
+                  <span style={{color:"#9de8b4",fontSize:10,flex:1}}>{d}</span>
+                  <span style={{color:"#FFDD00",fontSize:10,flexShrink:0}}>{pct}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{background:"#080f09",border:"1px solid #FF664422",padding:"10px 14px",fontSize:10,color:"#c0f0d0",lineHeight:2.2}}>
+            ⚠ <span style={{color:"#FF9933"}}>1 ticket</span> → solo wins all 3 places (90%).&nbsp;
+            <span style={{color:"#4499FF"}}>2 tickets</span> → 45% refund each.&nbsp;
+            10% ops+protocol applies in all cases.
+          </div>
+        </div>
+      </div>
+    </section>}
+
+    <footer style={{background:"#0d4a1e",borderTop:"3px solid #1BF26A",padding:"32px 20px",textAlign:"center"}}>
+      <div style={{fontSize:16,letterSpacing:2,marginBottom:7}}><span style={{color:"#FFDD00"}}>Wheel</span><span style={{color:"#44FF44"}}>Pool</span></div>
+      <div style={{color:"#c0f0d0",fontSize:"clamp(11px,2.2vw,14px)"}}> Built on Abstract Chain · NFT Tickets · Auto Payouts · Keeper + VRF + Paymaster</div>
+    </footer>
+
+    {drawPool&&<DrawTheater pool={drawPool} userTickets={tickets} drawTime={getNextSpin(drawPool.intervalH,drawPool.offsetMin)} onClose={()=>setDrawPool(null)}/>}
+    {mounted&&mintPool&&<MintModal pool={mintPool} onClose={()=>setMintPool(null)} onMinted={t=>{setTickets(p=>[t,...p]);setMintPool(null);setNav("tickets");}}/>}
+  </div>);}
