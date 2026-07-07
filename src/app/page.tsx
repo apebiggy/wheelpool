@@ -71,7 +71,7 @@ const WHEEL_SEGS=[
 const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
 function getRarity(){let r=Math.random()*100,a=0;for(const rt of RARITIES){a+=rt.weight;if(r<a)return rt;}return RARITIES[0];}
 let _tc=1;
-function mintTicket(pid){return{id:`WP-${pid.toUpperCase()}-${String(_tc++).padStart(4,"0")}`,poolId:pid,rarity:getRarity(),skin:SKINS[Math.floor(Math.random()*SKINS.length)],hat:HATS[Math.floor(Math.random()*HATS.length)],acc:ACCS[Math.floor(Math.random()*ACCS.length)],status:"LIVE",ts:Date.now(),addr:"0x"+Math.random().toString(16).slice(2,10)};}
+function mintTicket(pid){return{id:`WP-${pid.toUpperCase()}-${String(_tc++).padStart(4,"0")}`,poolId:pid,status:"LIVE",ts:Date.now()};}
 function stackR(results){const m={};results.forEach(r=>{const id=r.ticket.id;if(!m[id])m[id]={ticket:r.ticket,prizes:[],totalEth:0};m[id].prizes.push(r);m[id].totalEth+=parseFloat(r.ethWon);});return Object.values(m).sort((a,b)=>b.prizes.length-a.prizes.length||b.totalEth-a.totalEth);}
 function genDemo(pid){return[...Array(13).fill("Common"),...Array(8).fill("Uncommon"),...Array(5).fill("Rare"),...Array(3).fill("Epic"),...Array(1).fill("Legendary")].map((rn,i)=>{const rarity=RARITIES.find(r=>r.name===rn)||RARITIES[0];return{id:`DEMO-${pid.toUpperCase()}-${String(i+1).padStart(3,"0")}`,poolId:pid,rarity,skin:SKINS[i%6],hat:HATS[i%6],acc:ACCS[i%6],status:"LIVE",addr:`0x${(0xA000+i).toString(16)}...${(0xB000+i).toString(16)}`};});}
 function getNextSpin(ih,om){const n=Date.now(),im=ih*3600000,o2=om*60000,dm=86400000,b=Math.floor(n/dm)*dm;for(let i=0;i<=Math.ceil(24/ih)+2;i++){const t=b+i*im+o2;if(t>n+500)return t;}return b+dm+o2;}
@@ -266,169 +266,97 @@ function DrawTheater({onClose}){
 
 function MintModal({pool,onClose,onMinted}){
   const[step,setStep]=useState("confirm");
-  const[ticket,setTicket]=useState(null);
-  const[ti,setTi]=useState(0);
-  const go=()=>{setStep("minting");setTimeout(()=>{const t=mintTicket(pool.id);setTicket(t);setStep("revealed");[0,1,2,3,4,5].forEach(i=>setTimeout(()=>setTi(i+1),i*220+200));},1600);};
-  return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:500}} onClick={step==="confirm"?onClose:undefined}>
-    <div onClick={e=>e.stopPropagation()} style={{background:"#145414",border:`3px solid ${pool.color}`,padding:"28px",maxWidth:380,width:"92%",boxShadow:`0 0 50px ${pool.glow}`,fontFamily:"'Press Start 2P',monospace"}}>
-      {step==="confirm"&&<>
-        <h3 style={{color:pool.color,fontSize:15,textAlign:"center",marginBottom:20}}>MINT TICKET</h3>
-        <div style={{background:"#0f5422",padding:14,marginBottom:14}}>
-          {[["POOL",pool.name,pool.color],["COST",`${pool.entryEth} ETH (~$${pool.entryUsd})`,"#fff"],["1 ETH",`≈ $${ethPrice.toLocaleString()}`,"#9de8b4"],["DRAW",pool.label,"#FFDD00"],["CHAIN","Abstract Chain","#9977FF"]].map(([l,v,c])=>(<div key={l} style={{display:"flex",justifyContent:"space-between",marginBottom:9,fontSize:12}}><span style={{color:"#9de8b4"}}>{l}</span><span style={{color:c}}>{v}</span></div>))}
-        </div>
-        <div style={{background:"#0f5422",padding:"12px 14px",marginBottom:16,fontSize:11,color:"#b0edca",lineHeight:2.6}}>
-          <div style={{color:"#FFDD00",marginBottom:6}}>YOUR NFT TICKET</div>
-          <div>· Unique pixel penguin minted on-chain</div>
-          <div>· 1 ticket = 1 entry — buy more for better odds</div>
-          <div style={{color:"#44FF44"}}>· Buy 2+ tickets in one pool — each can win a different prize slot
-            <div style={{color:"#1BF26A",marginTop:4}}>· Winners receive ETH automatically — no claiming needed</div></div>
-        </div>
-        <div style={{display:"flex",gap:8}}>
-          <button onClick={go} style={{flex:1,padding:13,background:"#1a6a28",color:"#fff",border:"none",cursor:"pointer",fontSize:12,borderBottom:`3px solid ${pool.color}`,outline:"none"}}>⛏ MINT NOW</button>
-          <button onClick={onClose} style={{flex:1,padding:13,background:"#1a0808",color:"#888",border:"none",cursor:"pointer",fontSize:12,borderBottom:"3px solid #FF4444",outline:"none"}}>CANCEL</button>
-        </div>
-      </>}
-      {step==="minting"&&<div style={{textAlign:"center",padding:"36px 0"}}>
-        <div style={{fontSize:32,marginBottom:22,animation:"spinAnim 1s linear infinite",display:"inline-block"}}>🌀</div>
-        <div style={{color:pool.color,fontSize:13,letterSpacing:2,marginBottom:8}}>MINTING...</div>
-        <div style={{color:"#c0f0d0",fontSize:11,lineHeight:2}}>Deploying on Abstract Chain<br/>Generating your penguin...</div>
-      </div>}
-      {step==="revealed"&&ticket&&<>
-        <div style={{textAlign:"center",marginBottom:14}}><div style={{color:"#44FF44",fontSize:13}}>✅ MINTED!</div></div>
-        <div style={{display:"flex",justifyContent:"center",marginBottom:14}}>
-          <div style={{background:"#1a6830",border:`2px solid ${ticket.rarity.color}`,padding:14,boxShadow:`0 0 24px ${ticket.rarity.color}44`}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:6,fontSize:10}}><span style={{color:pool.color}}>{pool.name}</span><span style={{color:ticket.rarity.color}}>{ticket.rarity.name.toUpperCase()}</span></div>
-            <PenguinSVG skin={ticket.skin} hat={ticket.hat} acc={ticket.acc} size={88}/>
-            <div style={{textAlign:"center",marginTop:6,fontSize:10,color:"#c0f0d0"}}>{ticket.id}</div>
-          </div>
-        </div>
-        <div style={{marginBottom:12}}>{[["SKIN",ticket.skin],["HAT",ticket.hat],["GEAR",ticket.acc],["RARITY",ticket.rarity.name],["DRAW",pool.name],["SCHEDULE",pool.label]].map(([l,v],i)=>(<div key={l} style={{display:"flex",justifyContent:"space-between",padding:"6px 9px",marginBottom:3,background:ti>i?"#0d1e30":"#050b12",opacity:ti>i?1:0.3,transition:"all .3s",fontSize:11}}><span style={{color:"#9de8b4"}}>{l}</span><span style={{color:l==="RARITY"?ticket.rarity.color:l==="DRAW"?pool.color:l==="SCHEDULE"?"#FFDD00":"#ccc"}}>{v}</span></div>))}</div>
-        <button onClick={()=>{onMinted(ticket);onClose();}} style={{width:"100%",padding:13,background:"#0a2a14",color:"#44FF44",border:`2px solid ${pool.color}`,cursor:"pointer",fontSize:12,fontFamily:"'Press Start 2P',monospace",outline:"none"}}>VIEW MY TICKETS →</button>
-      </>}
-    </div>
-  </div>);}
 
-/* ══════════════════════════════════════════════
-   TICKET SECTIONS — 3 groups with time-period dropdowns
-══════════════════════════════════════════════ */
-function TicketSections({tickets,pools,ethPrice,onMint,onDraw,msLeft,fmtMs}){
-  // 3 sections — each independently selectable time period
-  const TIME_PERIODS=[
-    {id:"spin",  label:"HOURLY",    icon:"🎡",desc:"Every 1 hour"},
-    {id:"surge", label:"6-HOURLY",  icon:"🌊",desc:"Every 6 hours"},
-    {id:"twelve",label:"12-HOURLY", icon:"🔥",desc:"Every 12 hours"},
-    {id:"mega",  label:"DAILY",     icon:"⚡",desc:"Every 24 hours"},
-  ];
-  const[sec1,setSec1]=useState("spin");
-  const[sec2,setSec2]=useState("surge");
-  const[sec3,setSec3]=useState("mega");
-  const sections=[
-    {key:"s1",selected:sec1,setSelected:setSec1,label:"SECTION 1"},
-    {key:"s2",selected:sec2,setSelected:setSec2,label:"SECTION 2"},
-    {key:"s3",selected:sec3,setSelected:setSec3,label:"SECTION 3"},
-  ];
-
-  const renderSection=(sKey,selectedId,setSelected,sLabel)=>{
-    const pool=pools.find(p=>p.id===selectedId)||pools[0];
-    const liveEntryEth=(pool.entryUsd/ethPrice).toFixed(6);
-    const livePool={...pool,entryEth:liveEntryEth,poolEth:(parseFloat(liveEntryEth)*pool.entries).toFixed(4)};
-    const pt=tickets.filter(t=>t.poolId===selectedId);
-    const period=TIME_PERIODS.find(tp=>tp.id===selectedId)||TIME_PERIODS[0];
-
-    return(
-      <div key={sKey} style={{marginBottom:32,background:"#0f4a0f",border:"1px solid #2a7a22",padding:"0"}}>
-
-        {/* Section header with dropdown */}
-        <div style={{
-          display:"flex",alignItems:"center",justifyContent:"space-between",
-          padding:"12px 16px",background:"#145414",
-          borderBottom:"2px solid #2a7a22",flexWrap:"wrap",gap:8,
-        }}>
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <span style={{color:pool.color,fontSize:14}}>{period.icon}</span>
-            <select
-              value={selectedId}
-              onChange={e=>setSelected(e.target.value)}
-              style={{
-                background:"#0f5422",color:pool.color,
-                border:`2px solid ${pool.color}`,
-                padding:"6px 10px",fontSize:9,
-                fontFamily:"'Press Start 2P',monospace",
-                cursor:"pointer",outline:"none",
-              }}
-            >
-              {TIME_PERIODS.map(tp=>(
-                <option key={tp.id} value={tp.id}>{tp.icon} {tp.label} — ${pools.find(p=>p.id===tp.id)?.entryUsd}</option>
-              ))}
-            </select>
-          </div>
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <span style={{color:"#9de8b4",fontSize:9,fontFamily:"'Press Start 2P',monospace"}}>{pt.length} ticket{pt.length!==1?"s":""} · next: {fmtMs(msLeft(pool))}</span>
-            <button onClick={()=>onMint(livePool)} style={{background:"transparent",color:pool.color,border:`1px solid ${pool.color}`,padding:"5px 10px",cursor:"pointer",fontSize:9,fontFamily:"'Press Start 2P',monospace",outline:"none"}}>+ MINT</button>
-            <button onClick={()=>onDraw(livePool)} style={{background:"transparent",color:"#FFDD00",border:"1px solid #FFDD0066",padding:"5px 10px",cursor:"pointer",fontSize:9,fontFamily:"'Press Start 2P',monospace",outline:"none"}}>DRAW</button>
-          </div>
-        </div>
-
-        {/* Pool stats row */}
-        <div style={{
-          display:"flex",gap:0,borderBottom:"1px solid #2a7a22",
-          flexWrap:"wrap",
-        }}>
-          {[
-            ["ENTRY",`${liveEntryEth} ETH (~$${pool.entryUsd})`,pool.color],
-            ["IN POOL",`${pool.entries} tickets`,"#9de8b4"],
-            ["JACKPOT 50%",`${(parseFloat(livePool.poolEth)*0.45).toFixed(5)} ETH`,"#FFD700"],
-            ["SCHEDULE",period.desc,"#9de8b4"],
-          ].map(([l,v,c])=>(
-            <div key={l} style={{flex:"1 1 150px",padding:"8px 14px",borderRight:"1px solid #2a7a22"}}>
-              <div style={{color:"#6aaa6a",fontSize:8,fontFamily:"'Press Start 2P',monospace",marginBottom:3}}>{l}</div>
-              <div style={{color:c,fontSize:9,fontFamily:"'Press Start 2P',monospace"}}>{v}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Tickets */}
-        <div style={{padding:"16px",display:"flex",gap:10,flexWrap:"wrap"}}>
-          {pt.length===0?(
-            <div style={{
-              width:170,minHeight:200,background:"transparent",
-              border:`2px dashed ${pool.color}33`,
-              cursor:"pointer",color:pool.color,
-              fontFamily:"'Press Start 2P',monospace",fontSize:9,
-              display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,
-              outline:"none",
-            }} onClick={()=>onMint(livePool)}>
-              <span style={{fontSize:28}}>+</span>
-              <span>MINT TICKET</span>
-              <span style={{fontSize:8,color:"#c0f0d0"}}>${pool.entryUsd} · {period.label}</span>
-            </div>
-          ):(
-            <>
-              {pt.map(t=><TicketCard key={t.id} ticket={t}/>)}
-              <div style={{
-                width:170,minHeight:200,background:"transparent",
-                border:`2px dashed ${pool.color}33`,
-                cursor:"pointer",color:pool.color,
-                fontFamily:"'Press Start 2P',monospace",fontSize:9,
-                display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,
-              }} onClick={()=>onMint(livePool)}>
-                <span style={{fontSize:22}}>+</span>
-                <span>MORE</span>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    );
+  const go=()=>{
+    setStep("minting");
+    setTimeout(()=>{
+      const t=mintTicket(pool.id);
+      onMinted(t);
+      setStep("done");
+    },1200);
   };
 
   return(
-    <div>
-      {sections.map(s=>renderSection(s.key,s.selected,s.setSelected,s.label))}
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:500}} onClick={step==="confirm"?onClose:undefined}>
+      <div onClick={e=>e.stopPropagation()} style={{
+        background:"#145414",border:`3px solid ${pool.color}`,
+        padding:"28px",maxWidth:360,width:"92%",
+        boxShadow:`0 0 50px ${pool.glow}`,
+        fontFamily:"'Press Start 2P',monospace",
+      }}>
+
+        {step==="confirm"&&<>
+          <h3 style={{color:pool.color,fontSize:14,textAlign:"center",marginBottom:20}}>ENTER POOL</h3>
+
+          {/* Pool summary */}
+          <div style={{background:"#0f5422",border:`1px solid ${pool.color}44`,padding:16,marginBottom:16}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,paddingBottom:12,borderBottom:`1px solid ${pool.color}33`}}>
+              <span style={{fontSize:28}}>{pool.icon}</span>
+              <div>
+                <div style={{color:pool.color,fontSize:13,marginBottom:3}}>{pool.name}</div>
+                <div style={{color:"#9de8b4",fontSize:9}}>{pool.label}</div>
+              </div>
+            </div>
+            {[
+              ["ENTRY FEE",`${pool.entryEth} ETH (~$${pool.entryUsd})`,pool.color],
+              ["JACKPOT (50%)",`${(parseFloat(pool.poolEth)*0.45).toFixed(5)} ETH`,"#FFD700"],
+              ["2ND PRIZE (25%)",`${(parseFloat(pool.poolEth)*0.225).toFixed(5)} ETH`,"#C0C0C0"],
+              ["3RD PRIZE (15%)",`${(parseFloat(pool.poolEth)*0.135).toFixed(5)} ETH`,"#CD7F32"],
+              ["IN POOL NOW",`${pool.entries} entries`,"#9de8b4"],
+              ["MIN TO DRAW","3 unique wallets","#9de8b4"],
+            ].map(([l,v,c])=>(
+              <div key={l} style={{display:"flex",justifyContent:"space-between",marginBottom:8,gap:8}}>
+                <span style={{color:"#6aaa6a",fontSize:9,flexShrink:0}}>{l}</span>
+                <span style={{color:c,fontSize:9,textAlign:"right"}}>{v}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{background:"#0a2010",border:"1px solid #2a5a2a",padding:"10px 14px",marginBottom:16,fontSize:9,color:"#9de8b4",lineHeight:2}}>
+            You pay your own gas to enter. If fewer than 3 unique wallets join, the draw is cancelled and you receive a full refund.
+          </div>
+
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={go} style={{flex:1,padding:13,background:"#1a6a28",color:"#fff",border:"none",cursor:"pointer",fontSize:11,borderBottom:`3px solid ${pool.color}`,outline:"none"}}>
+              ENTER POOL →
+            </button>
+            <button onClick={onClose} style={{flex:1,padding:13,background:"#1a0808",color:"#888",border:"none",cursor:"pointer",fontSize:11,borderBottom:"3px solid #FF4444",outline:"none"}}>
+              CANCEL
+            </button>
+          </div>
+        </>}
+
+        {step==="minting"&&(
+          <div style={{textAlign:"center",padding:"36px 0"}}>
+            <div style={{fontSize:32,marginBottom:20,animation:"spinAnim 1s linear infinite",display:"inline-block"}}>⏳</div>
+            <div style={{color:pool.color,fontSize:12,letterSpacing:2,marginBottom:8}}>ENTERING POOL...</div>
+            <div style={{color:"#9de8b4",fontSize:9,lineHeight:2}}>Submitting entry on Abstract Chain</div>
+          </div>
+        )}
+
+        {step==="done"&&(
+          <div style={{textAlign:"center",padding:"20px 0"}}>
+            <div style={{fontSize:40,marginBottom:14}}>✅</div>
+            <div style={{color:"#44FF44",fontSize:12,marginBottom:8}}>YOU&apos;RE IN!</div>
+            <div style={{color:pool.color,fontSize:10,marginBottom:4}}>{pool.icon} {pool.name}</div>
+            <div style={{color:"#9de8b4",fontSize:9,marginBottom:20,lineHeight:2}}>
+              Entry confirmed. Draw runs {pool.label.toLowerCase()}.<br/>
+              Winners paid automatically on-chain.
+            </div>
+            <button onClick={onClose} style={{
+              width:"100%",padding:12,
+              background:"#0a2a14",color:"#44FF44",
+              border:`2px solid ${pool.color}`,
+              cursor:"pointer",fontSize:10,
+              fontFamily:"'Press Start 2P',monospace",outline:"none",
+            }}>VIEW MY ENTRIES →</button>
+          </div>
+        )}
+
+      </div>
     </div>
   );
 }
-
 
 /* ══════════════════════════════════════════════
    POOL CARD
@@ -496,49 +424,53 @@ function PoolCard({pool,msLeft,myTickets,onMint,onDraw}){
 ══════════════════════════════════════════════ */
 function TicketCard({ticket}){
   const pool=POOLS.find(p=>p.id===ticket.poolId)||POOLS[0];
-  const rc=ticket.rarity.color;
-  return(<div style={{
-    background:"linear-gradient(160deg,#1e4a1e,#1a6830)",
-    border:`2px solid ${rc}66`,borderTop:`3px solid ${rc}`,
-    padding:"12px",width:170,flexShrink:0,
-    boxShadow:`0 0 12px ${rc}22`,position:"relative",
-  }}>
-    {/* Pool + rarity */}
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-      <span style={{fontSize:9,color:pool.color,fontFamily:"'Press Start 2P',monospace"}}>{pool.icon} {pool.name}</span>
-      <span style={{fontSize:8,color:rc,background:`${rc}18`,padding:"2px 5px",fontFamily:"'Press Start 2P',monospace"}}>{ticket.rarity.name.slice(0,4).toUpperCase()}</span>
-    </div>
-    {/* Penguin */}
-    <div style={{display:"flex",justifyContent:"center",marginBottom:8}}><PenguinSVG skin={ticket.skin} hat={ticket.hat} acc={ticket.acc} size={72}/></div>
-    {/* Traits */}
-    <div style={{display:"flex",flexDirection:"column",gap:3,marginBottom:8}}>
-      {[["SKIN",ticket.skin],["HAT",ticket.hat],["GEAR",ticket.acc]].map(([l,v])=>(
-        <div key={l} style={{display:"flex",justifyContent:"space-between",gap:4}}>
-          <span style={{color:"#9de8b4",fontSize:8,fontFamily:"'Press Start 2P',monospace",flexShrink:0}}>{l}</span>
-          <span style={{color:"#ccc",fontSize:8,fontFamily:"'Press Start 2P',monospace",textAlign:"right",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:90}}>{v}</span>
+  const ts=new Date(ticket.ts);
+  const dateStr=ts.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+  const timeStr=ts.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  return(
+    <div style={{
+      background:"linear-gradient(160deg,#0e3a0e,#145414)",
+      border:`2px solid ${pool.color}55`,
+      borderTop:`3px solid ${pool.color}`,
+      borderBottom:`3px solid ${pool.color}55`,
+      padding:"14px",width:170,flexShrink:0,
+      boxShadow:`0 0 12px ${pool.color}18`,
+      fontFamily:"'Press Start 2P',monospace",
+    }}>
+      {/* Pool header */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+        <span style={{color:pool.color,fontSize:11}}>{pool.icon} {pool.name}</span>
+        <span style={{color:"#44FF44",background:"#44FF4418",padding:"2px 5px",fontSize:8}}>LIVE</span>
+      </div>
+      {/* Entry fee */}
+      <div style={{
+        textAlign:"center",padding:"10px 0",marginBottom:10,
+        borderTop:`1px solid ${pool.color}33`,
+        borderBottom:`1px solid ${pool.color}33`,
+      }}>
+        <div style={{color:pool.color,fontSize:22,fontFamily:"'VT323',monospace",lineHeight:1}}>${pool.entryUsd}</div>
+        <div style={{color:"#9de8b4",fontSize:8,marginTop:4}}>{pool.entryEth} ETH</div>
+      </div>
+      {/* Draw info */}
+      <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:10}}>
+        <div style={{display:"flex",justifyContent:"space-between"}}>
+          <span style={{color:"#6aaa6a",fontSize:8}}>DRAW</span>
+          <span style={{color:"#9de8b4",fontSize:8}}>{pool.label}</span>
         </div>
-      ))}
-    </div>
-    {/* Footer */}
-    <div style={{borderTop:`1px solid ${rc}22`,paddingTop:7,display:"flex",flexDirection:"column",gap:3}}>
-      <div style={{display:"flex",justifyContent:"space-between"}}>
-        <span style={{color:"#9de8b4",fontSize:8,fontFamily:"'Press Start 2P',monospace"}}>DRAW</span>
-        <span style={{color:pool.color,fontSize:8,fontFamily:"'Press Start 2P',monospace"}}>{pool.label}</span>
+        <div style={{display:"flex",justifyContent:"space-between"}}>
+          <span style={{color:"#6aaa6a",fontSize:8}}>ENTERED</span>
+          <span style={{color:"#9de8b4",fontSize:8}}>{dateStr} {timeStr}</span>
+        </div>
       </div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{color:"#9de8b4",fontSize:7,fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:95}}>{ticket.id}</span>
-        <span style={{color:"#44FF44",background:"#44FF4418",padding:"2px 4px",fontSize:8,fontFamily:"'Press Start 2P',monospace"}}>LIVE</span>
-      </div>
+      {/* Ticket ID */}
+      <div style={{
+        borderTop:`1px solid ${pool.color}22`,
+        paddingTop:7,
+        color:"#6aaa6a",fontSize:7,
+        fontFamily:"monospace",
+        wordBreak:"break-all",
+      }}>{ticket.id}</div>
     </div>
-  </div>);}
+  );
+}
 
-{nav==="tickets"&&<section style={{padding:"48px 20px",maxWidth:1060,margin:"0 auto"}}>
-      <h2 style={{textAlign:"center",fontSize:"clamp(20px,5vw,30px)",color:"#FFDD00",letterSpacing:2,marginBottom:6}}>🎟 MY TICKETS</h2>
-      <div style={{textAlign:"center",color:"#c0f0d0",fontSize:"clamp(12px,3vw,16px)",marginBottom:28}}>{tickets.length} ticket{tickets.length!==1?"s":""} across {[...new Set(tickets.map(t=>t.poolId))].length} pool{[...new Set(tickets.map(t=>t.poolId))].length!==1?"s":""}</div>
-
-      {tickets.length===0?(<div style={{textAlign:"center",padding:"50px 0"}}>
-        <div style={{fontSize:44,marginBottom:24}}>🐧</div>
-        <div style={{color:"#9de8b4",fontSize:11,fontFamily:"'Press Start 2P',monospace",marginBottom:16}}>No tickets yet</div>
-        <button onClick={()=>setNav("home")} style={{background:"#c44400",color:"#fff",border:"none",padding:"13px 20px",cursor:"pointer",fontSize:11,fontFamily:"'Press Start 2P',monospace",borderBottom:"4px solid #FF9900",outline:"none"}}>GET MY FIRST TICKET</button>
-      </div>):(<TicketSections tickets={tickets} pools={POOLS} ethPrice={ethPrice} onMint={p=>setMintPool(p)} onDraw={p=>setDrawPool(p)} msLeft={ms} fmtMs={fmtMs}/>)}
-    </section>}
