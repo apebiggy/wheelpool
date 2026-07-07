@@ -274,7 +274,7 @@ function MintModal({pool,onClose,onMinted}){
       {step==="confirm"&&<>
         <h3 style={{color:pool.color,fontSize:15,textAlign:"center",marginBottom:20}}>MINT TICKET</h3>
         <div style={{background:"#0f5422",padding:14,marginBottom:14}}>
-          {[["POOL",pool.name,pool.color],["COST",`${pool.entryEth} ETH (~$${pool.entryUsd})`,"#fff"],["DRAW",pool.label,"#FFDD00"],["CHAIN","Abstract Chain","#9977FF"]].map(([l,v,c])=>(<div key={l} style={{display:"flex",justifyContent:"space-between",marginBottom:9,fontSize:12}}><span style={{color:"#9de8b4"}}>{l}</span><span style={{color:c}}>{v}</span></div>))}
+          {[["POOL",pool.name,pool.color],["COST",`${pool.entryEth} ETH (~$${pool.entryUsd})`,"#fff"],["1 ETH",`≈ $${ethPrice.toLocaleString()}`,"#9de8b4"],["DRAW",pool.label,"#FFDD00"],["CHAIN","Abstract Chain","#9977FF"]].map(([l,v,c])=>(<div key={l} style={{display:"flex",justifyContent:"space-between",marginBottom:9,fontSize:12}}><span style={{color:"#9de8b4"}}>{l}</span><span style={{color:c}}>{v}</span></div>))}
         </div>
         <div style={{background:"#0f5422",padding:"12px 14px",marginBottom:16,fontSize:11,color:"#b0edca",lineHeight:2.6}}>
           <div style={{color:"#FFDD00",marginBottom:6}}>YOUR NFT TICKET</div>
@@ -405,6 +405,26 @@ export default function WheelPool(){
   const wallet = "";
   const ethBalance = "0.0000";
   const[now,setNow]=useState(Date.now());
+  const[ethPrice,setEthPrice]=useState(3000); // fallback price
+  const[priceLoading,setPriceLoading]=useState(true);
+
+  useEffect(()=>{
+    const fetchPrice=async()=>{
+      try{
+        const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+        const d=await r.json();
+        if(d.ethereum?.usd){setEthPrice(d.ethereum.usd);}
+      }catch(e){
+        // fallback stays at 3000
+      }finally{
+        setPriceLoading(false);
+      }
+    };
+    fetchPrice();
+    // Refresh price every 5 minutes
+    const id=setInterval(fetchPrice,300000);
+    return()=>clearInterval(id);
+  },[]);
   const[mounted,setMounted]=useState(false);
   useEffect(()=>setMounted(true),[]);
   const[wheelSize,setWheelSize]=useState(190);
@@ -544,7 +564,7 @@ export default function WheelPool(){
 
       {/* stats */}
       <div style={{display:"flex",justifyContent:"space-around",flexWrap:"wrap",background:"#0f5422",borderBottom:"2px solid #3a7a22",padding:"12px",gap:12}}>
-        {[["TICKETS LIVE","2,341","#44FF44"],["ETH LOCKED","4.2 ETH","#FFDD00"],["DRAWS TODAY","72","#FF9933"],["MULTI-WINS","18%","#FFD700"]].map(([l,v,c])=>(<div key={l} style={{textAlign:"center"}}><div style={{color:"#c0f0d0",fontSize:"clamp(11px,2.2vw,14px)"}}> {l}</div><div style={{color:c,fontSize:18,marginTop:6,fontFamily:"'VT323',monospace"}}>{v}</div></div>))}
+        {[["ETH PRICE",priceLoading?"...":"$"+ethPrice.toLocaleString(),"#1BF26A"],["TICKETS LIVE","2,341","#44FF44"],["ETH LOCKED","4.2 ETH","#FFDD00"],["DRAWS TODAY","72","#FF9933"]].map(([l,v,c])=>(<div key={l} style={{textAlign:"center"}}><div style={{color:"#c0f0d0",fontSize:"clamp(11px,2.2vw,14px)"}}> {l}</div><div style={{color:c,fontSize:18,marginTop:6,fontFamily:"'VT323',monospace"}}>{v}</div></div>))}
       </div>
 
       {/* pools */}
@@ -553,7 +573,18 @@ export default function WheelPool(){
           <h2 style={{textAlign:"center",fontSize:"clamp(24px,6vw,34px)",color:"#FFDD00",textShadow:"3px 3px 0 #000",letterSpacing:2,marginBottom:8}}>🎰 CHOOSE A POOL</h2>
           <div style={{textAlign:"center",color:"#c0f0d0",fontSize:"clamp(16px,4vw,20px)",marginBottom:28}}>Draws every 1H · 6H · 24H &nbsp;·&nbsp; More tickets = better odds &nbsp;·&nbsp; One ticket can win multiple prizes</div>
           <div style={{display:"flex",gap:18,justifyContent:"center",flexWrap:"wrap"}}>
-            {POOLS.map(pool=>(<PoolCard key={pool.id} pool={pool} msLeft={ms(pool)} myTickets={myT(pool.id)} onMint={()=>setMintPool(pool)} onDraw={()=>setDrawPool(pool)}/>))}
+            {POOLS.map(pool=>{
+            const liveEntryEth=(pool.entryUsd/ethPrice).toFixed(6);
+            const livePoolEth=(parseFloat(liveEntryEth)*pool.entries).toFixed(4);
+            const liveJackpot=(parseFloat(livePoolEth)*0.5*0.9).toFixed(5);
+            const livePool={
+              ...pool,
+              entryEth:liveEntryEth,
+              poolEth:livePoolEth,
+              jackpot:liveJackpot,
+            };
+            return(<PoolCard key={pool.id} pool={livePool} msLeft={ms(pool)} myTickets={myT(pool.id)} onMint={()=>setMintPool(livePool)} onDraw={()=>setDrawPool(livePool)}/>);
+          })}
           </div>
         </div>
       </section>
