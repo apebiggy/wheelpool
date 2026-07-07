@@ -366,7 +366,7 @@ function PoolCard({pool,msLeft,myTickets,onMint,onDraw}){
   const soon=msLeft<3600000,urgent=msLeft<300000;
   const mc=myTickets.length;
   const myOdds=mc>0?Math.min(99,(mc/pool.entries*100)).toFixed(1):null;
-  return(<div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{flex:"1 1 260px",maxWidth:340,background:`linear-gradient(160deg,${pool.darkBg},#1a6830)`,border:`2px solid ${hov?pool.color+"99":"#2a9444"}`,transition:"border-color .25s,transform .2s",transform:hov?"translateY(-5px)":"none",padding:"24px",position:"relative",overflow:"hidden"}}>
+  return(<div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{flex:"0 0 260px",minWidth:240,background:`linear-gradient(160deg,${pool.darkBg},#1a6830)`,border:`2px solid ${hov?pool.color+"99":"#2a9444"}`,transition:"border-color .25s,transform .2s",transform:hov?"translateY(-5px)":"none",padding:"24px",position:"relative",overflow:"hidden"}}>
     {hov&&<div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse at 50% 0%,${pool.glow} 0%,transparent 65%)`,opacity:.3,pointerEvents:"none"}}/>}
 
     {/* ── Big price badge ── */}
@@ -529,7 +529,7 @@ export default function WheelPool(){
   const[mounted,setMounted]=useState(false);
   useEffect(()=>setMounted(true),[]);
   useEffect(()=>{
-    const fp=async()=>{try{const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');const d=await r.json();if(d.ethereum?.usd)setEthPrice(d.ethereum.usd);}catch(e){}finally{setPriceLoading(false);}};
+    const fp=async()=>{try{const r=await fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT');const d=await r.json();if(d.price)setEthPrice(parseFloat(parseFloat(d.price).toFixed(2)));}catch(e){}finally{setPriceLoading(false);}};
     fp();const id=setInterval(fp,300000);return()=>clearInterval(id);
   },[]);
   const[wheelSize,setWheelSize]=useState(190);
@@ -596,9 +596,9 @@ export default function WheelPool(){
 
     {nav==="home"&&<>
       {/* ═══ HERO — image bg + interactive wheel overlay ═══ */}
-      <section style={{position:"relative",overflow:"visible",paddingBottom:"clamp(32px,8vw,48px)"}}>
+      <section style={{position:"relative",overflow:"visible",paddingBottom:"clamp(32px,8vw,48px)",paddingTop:"88px",marginTop:"-88px"}}>
         {/* background image */}
-        <img src={HERO} alt="WheelPool" style={{width:"100%",display:"block",maxHeight:480,objectFit:"cover",objectPosition:"center top"}}/>
+        <img src={HERO} alt="WheelPool" style={{width:"100%",display:"block",maxHeight:560,objectFit:"cover",objectPosition:"center top"}}/>
 
         {/* dark gradient so text/wheel are readable */}
         <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(0,0,0,.0) 0%,rgba(0,0,0,.05) 50%,rgba(10,60,10,.92) 100%)"}}/>
@@ -607,7 +607,7 @@ export default function WheelPool(){
         {/* interactive wheel — smaller, sits over image wheel, WheelPool banner stays visible */}
         <div style={{
           position:"absolute",
-          top:"54%", left:"50%",
+          top:"62%", left:"50%",
           transform:"translate(-50%, -50%)",
           zIndex:3,
         }}>
@@ -661,7 +661,7 @@ export default function WheelPool(){
         <div style={{maxWidth:1060,margin:"0 auto"}}>
           <h2 style={{textAlign:"center",fontSize:"clamp(24px,6vw,34px)",color:"#FFDD00",textShadow:"3px 3px 0 #000",letterSpacing:2,marginBottom:8}}>🎰 CHOOSE A POOL</h2>
           <div style={{textAlign:"center",color:"#c0f0d0",fontSize:"clamp(16px,4vw,20px)",marginBottom:28}}>Draws every 1H · 6H · 24H &nbsp;·&nbsp; More tickets = better odds &nbsp;·&nbsp; One ticket can win multiple prizes</div>
-          <div style={{display:"flex",gap:18,justifyContent:"center",flexWrap:"wrap"}}>
+          <div style={{display:"flex",gap:12,overflowX:"auto",paddingBottom:8,alignItems:"stretch"}}>
             {POOLS.map(pool=>(<PoolCard key={pool.id} pool={pool} msLeft={ms(pool)} myTickets={myT(pool.id)} onMint={()=>setMintPool(pool)} onDraw={()=>setDrawPool(pool)}/>))}
           </div>
         </div>
@@ -671,11 +671,7 @@ export default function WheelPool(){
     {nav==="tickets"&&<section style={{padding:"48px 20px",maxWidth:1060,margin:"0 auto"}}>
       <h2 style={{textAlign:"center",fontSize:"clamp(20px,5vw,30px)",color:"#FFDD00",letterSpacing:2,marginBottom:6}}>🎟 MY ENTRIES</h2>
       <div style={{textAlign:"center",color:"#c0f0d0",fontSize:"clamp(12px,3vw,16px)",marginBottom:28}}>{tickets.length} entr{tickets.length===1?"y":"ies"}</div>
-      {tickets.length===0?(<div style={{textAlign:"center",padding:"50px 0"}}>
-        <div style={{fontSize:44,marginBottom:24}}>🎟</div>
-        <div style={{color:"#9de8b4",fontSize:11,fontFamily:"'Press Start 2P',monospace",marginBottom:16}}>No entries yet</div>
-        <button onClick={()=>setNav("home")} style={{background:"#c44400",color:"#fff",border:"none",padding:"13px 20px",cursor:"pointer",fontSize:11,fontFamily:"'Press Start 2P',monospace",borderBottom:"4px solid #FF9900",outline:"none"}}>ENTER A POOL</button>
-      </div>):(<TicketSections tickets={tickets} pools={POOLS} ethPrice={ethPrice} onMint={p=>setMintPool(p)} onDraw={p=>setDrawPool(p)} msLeft={ms} fmtMs={fmtMs}/>)}
+      <TicketSections tickets={tickets} pools={POOLS} ethPrice={ethPrice} onMint={p=>setMintPool(p)} onDraw={p=>setDrawPool(p)} msLeft={ms} fmtMs={fmtMs}/>
     </section>}
     {nav==="how"&&<section style={{padding:"48px 20px",background:"#0d4a1e"}}>
       <div style={{maxWidth:900,margin:"0 auto"}}>
