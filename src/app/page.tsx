@@ -423,7 +423,7 @@ function PoolCard({pool,msLeft,myTickets,onMint,onDraw}){
    TICKET CARD
 ══════════════════════════════════════════════ */
 
-function WheelPool(){
+export default function WheelPool(){
   const[now,setNow]=useState(Date.now());
   const connected=false;const wallet="";const ethBalance="0.0000";
   const[ethPrice,setEthPrice]=useState(3000);
