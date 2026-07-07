@@ -423,11 +423,109 @@ function PoolCard({pool,msLeft,myTickets,onMint,onDraw}){
    TICKET CARD
 ══════════════════════════════════════════════ */
 
+/* ══════════════════════════════════════════════
+   TICKET SECTIONS — 3 groups with time-period dropdowns
+══════════════════════════════════════════════ */
+function TicketSections({tickets,pools,ethPrice,onMint,onDraw,msLeft,fmtMs}){
+  const TIME_PERIODS=[
+    {id:"spin",  label:"HOURLY",   icon:"🎡",desc:"Every 1 hour"},
+    {id:"surge", label:"6-HOURLY", icon:"🌊",desc:"Every 6 hours"},
+    {id:"twelve",label:"12-HOURLY",icon:"🔥",desc:"Every 12 hours"},
+    {id:"mega",  label:"DAILY",    icon:"⚡",desc:"Every 24 hours"},
+  ];
+  const[sec1,setSec1]=useState("spin");
+  const[sec2,setSec2]=useState("surge");
+  const[sec3,setSec3]=useState("mega");
+
+  const renderSection=(key,selectedId,setSelected)=>{
+    const pool=pools.find(p=>p.id===selectedId)||pools[0];
+    const liveEth=(pool.entryUsd/ethPrice).toFixed(6);
+    const livePool={...pool,entryEth:liveEth,poolEth:(parseFloat(liveEth)*pool.entries).toFixed(4)};
+    const pt=tickets.filter(t=>t.poolId===selectedId);
+    const period=TIME_PERIODS.find(tp=>tp.id===selectedId)||TIME_PERIODS[0];
+    return(
+      <div key={key} style={{marginBottom:24,background:"#0f4a0f",border:"1px solid #2a7a22"}}>
+        {/* Header with dropdown */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:"#145414",borderBottom:"2px solid #2a7a22",flexWrap:"wrap",gap:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:14}}>{period.icon}</span>
+            <select value={selectedId} onChange={e=>setSelected(e.target.value)} style={{
+              background:"#0f5422",color:pool.color,border:`2px solid ${pool.color}`,
+              padding:"6px 10px",fontSize:9,fontFamily:"'Press Start 2P',monospace",
+              cursor:"pointer",outline:"none",
+            }}>
+              {TIME_PERIODS.map(tp=>(
+                <option key={tp.id} value={tp.id}>{tp.icon} {tp.label} — ${pools.find(p=>p.id===tp.id)?.entryUsd}</option>
+              ))}
+            </select>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{color:"#9de8b4",fontSize:9,fontFamily:"'Press Start 2P',monospace"}}>
+              {pt.length} entr{pt.length===1?"y":"ies"} · next: {fmtMs(msLeft(pool))}
+            </span>
+            <button onClick={()=>onMint(livePool)} style={{background:"transparent",color:pool.color,border:`1px solid ${pool.color}`,padding:"5px 10px",cursor:"pointer",fontSize:9,fontFamily:"'Press Start 2P',monospace",outline:"none"}}>+ ENTER</button>
+            <button onClick={()=>onDraw(livePool)} style={{background:"transparent",color:"#FFDD00",border:"1px solid #FFDD0066",padding:"5px 10px",cursor:"pointer",fontSize:9,fontFamily:"'Press Start 2P',monospace",outline:"none"}}>DRAW</button>
+          </div>
+        </div>
+        {/* Stats row */}
+        <div style={{display:"flex",flexWrap:"wrap",borderBottom:"1px solid #2a7a22"}}>
+          {[
+            ["ENTRY",`${liveEth} ETH (~$${pool.entryUsd})`,pool.color],
+            ["IN POOL",`${pool.entries} entries`,"#9de8b4"],
+            ["JACKPOT",`${(parseFloat(livePool.poolEth)*0.45).toFixed(5)} ETH`,"#FFD700"],
+            ["SCHEDULE",period.desc,"#9de8b4"],
+          ].map(([l,v,c])=>(
+            <div key={l} style={{flex:"1 1 140px",padding:"8px 14px",borderRight:"1px solid #2a7a22"}}>
+              <div style={{color:"#6aaa6a",fontSize:8,fontFamily:"'Press Start 2P',monospace",marginBottom:3}}>{l}</div>
+              <div style={{color:c,fontSize:9,fontFamily:"'Press Start 2P',monospace"}}>{v}</div>
+            </div>
+          ))}
+        </div>
+        {/* Entries */}
+        <div style={{padding:"16px",display:"flex",gap:10,flexWrap:"wrap"}}>
+          {pt.length===0?(
+            <div onClick={()=>onMint(livePool)} style={{
+              width:170,minHeight:180,background:"transparent",
+              border:`2px dashed ${pool.color}33`,cursor:"pointer",
+              color:pool.color,fontFamily:"'Press Start 2P',monospace",fontSize:9,
+              display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,
+            }}>
+              <span style={{fontSize:28}}>+</span>
+              <span>ENTER POOL</span>
+              <span style={{fontSize:8,color:"#c0f0d0"}}>${pool.entryUsd} · {period.label}</span>
+            </div>
+          ):(
+            <>
+              {pt.map(t=><TicketCard key={t.id} ticket={t} pool={livePool}/>)}
+              <div onClick={()=>onMint(livePool)} style={{
+                width:170,minHeight:180,background:"transparent",
+                border:`2px dashed ${pool.color}33`,cursor:"pointer",
+                color:pool.color,fontFamily:"'Press Start 2P',monospace",fontSize:9,
+                display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,
+              }}>
+                <span style={{fontSize:22}}>+</span><span>MORE</span>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  return(
+    <div>
+      {renderSection("s1",sec1,setSec1)}
+      {renderSection("s2",sec2,setSec2)}
+      {renderSection("s3",sec3,setSec3)}
+    </div>
+  );
+}
+
 export default function WheelPool(){
   const[now,setNow]=useState(Date.now());
   const connected=false;const wallet="";const ethBalance="0.0000";
   const[ethPrice,setEthPrice]=useState(3000);
-  const[priceLoading,setPriceLoading]=useState(true);
+  const[priceLoading,setPriceLoading]=useState(false);
   const[mounted,setMounted]=useState(false);
   useEffect(()=>setMounted(true),[]);
   useEffect(()=>{
