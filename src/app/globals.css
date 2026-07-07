@@ -101,3 +101,20 @@ header {
     top: 72% !important;
   }
 }
+
+/* ── Remove tap highlight everywhere ─────────── */
+* { -webkit-tap-highlight-color: transparent; }
+button, a, [role="button"] { outline: none; }
+
+/* ── Connect button always visible on mobile ─── */
+@media (max-width: 600px) {
+  .header-wallet {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 4px 0 8px !important;
+  }
+  .header-wallet button,
+  .header-wallet div {
+    font-size: 10px !important;
+  }
+}

@@ -60,9 +60,9 @@ export function ConnectButton() {
       style={{
         background: "#0d4a1e", border: "2px solid #1BF26A",
         color: "#1BF26A", padding: "8px 16px",
-        cursor: "pointer", fontSize: "clamp(9px,2vw,11px)",
+        cursor: "pointer", fontSize: "11px",
         fontFamily: "'Press Start 2P', monospace",
-        whiteSpace: "nowrap", outline: "none", letterSpacing: "1px",
+        whiteSpace: "nowrap", outline: "none", letterSpacing: "1px", minWidth: "120px", textAlign: "center",
       }}
     >
       CONNECT AGW

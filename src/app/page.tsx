@@ -452,37 +452,36 @@ function TicketCard({ticket,pool:poolOverride}){
       background:"linear-gradient(160deg,#0e3a0e,#145414)",
       border:`1px solid ${pool.color}44`,
       borderTop:"3px solid #FFD700",
-      padding:"14px",width:170,flexShrink:0,
-      fontFamily:"'Press Start 2P',monospace",
+      padding:"12px 10px",width:160,flexShrink:0,
       position:"relative",
     }}>
-      {/* Pool header */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-        <span style={{color:pool.color,fontSize:10}}>{pool.icon} {pool.name}</span>
-        <span style={{color:"#44FF44",background:"#44FF4418",padding:"2px 5px",fontSize:8}}>LIVE</span>
+      {/* Pool header — VT323 wide, fits nicely */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+        <span style={{color:pool.color,fontSize:14,fontFamily:"'VT323',monospace",letterSpacing:1}}>{pool.icon} {pool.name}</span>
+        <span style={{color:"#44FF44",background:"#44FF4418",padding:"1px 4px",fontSize:9,fontFamily:"monospace"}}>LIVE</span>
       </div>
       {/* Entry fee */}
       <div style={{
-        textAlign:"center",padding:"10px 0",marginBottom:10,
+        textAlign:"center",padding:"8px 0",marginBottom:8,
         borderTop:`1px solid ${pool.color}33`,
         borderBottom:`1px solid ${pool.color}33`,
       }}>
-        <div style={{color:pool.color,fontSize:22,fontFamily:"'VT323',monospace",lineHeight:1}}>${pool.entryUsd}</div>
-        <div style={{color:"#9de8b4",fontSize:8,marginTop:4}}>{pool.entryEth} ETH</div>
+        <div style={{color:pool.color,fontSize:28,fontFamily:"'VT323',monospace",lineHeight:1}}>${pool.entryUsd}</div>
+        <div style={{color:"#9de8b4",fontSize:10,fontFamily:"'VT323',monospace",marginTop:2}}>{pool.entryEth} ETH</div>
       </div>
-      {/* Draw info */}
-      <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:10}}>
-        <div style={{display:"flex",justifyContent:"space-between"}}>
-          <span style={{color:"#6aaa6a",fontSize:8}}>DRAW</span>
-          <span style={{color:"#9de8b4",fontSize:8}}>{pool.label}</span>
+      {/* Draw info — monospace fits tight width */}
+      <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:8}}>
+        <div style={{display:"flex",justifyContent:"space-between",gap:4}}>
+          <span style={{color:"#6aaa6a",fontSize:10,fontFamily:"'VT323',monospace"}}>DRAW</span>
+          <span style={{color:"#9de8b4",fontSize:10,fontFamily:"'VT323',monospace",textAlign:"right"}}>{pool.label}</span>
         </div>
-        <div style={{display:"flex",justifyContent:"space-between"}}>
-          <span style={{color:"#6aaa6a",fontSize:8}}>ENTERED</span>
-          <span style={{color:"#9de8b4",fontSize:8}}>{dateStr} {timeStr}</span>
+        <div style={{display:"flex",justifyContent:"space-between",gap:4}}>
+          <span style={{color:"#6aaa6a",fontSize:10,fontFamily:"'VT323',monospace"}}>IN</span>
+          <span style={{color:"#9de8b4",fontSize:10,fontFamily:"'VT323',monospace"}}>{dateStr} {timeStr}</span>
         </div>
       </div>
-      {/* Ticket ID */}
-      <div style={{borderTop:`1px solid ${pool.color}22`,paddingTop:7,color:"#6aaa6a",fontSize:7,fontFamily:"monospace",wordBreak:"break-all"}}>{ticket.id}</div>
+      {/* Ticket ID — plain monospace */}
+      <div style={{borderTop:`1px solid ${pool.color}22`,paddingTop:6,color:"#6aaa6a",fontSize:9,fontFamily:"monospace",wordBreak:"break-all",lineHeight:1.4}}>{ticket.id}</div>
     </div>
   );
 }
