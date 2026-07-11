@@ -17,6 +17,13 @@ const PRIZE_SLOTS = [
   { label:'3RD',     icon:'🥉', color:'#CD7F32', pct:15 },
 ];
 
+// Points per non-winning ticket based on pool entry fee
+const POOL_POINTS = { 'spin':100,'surge':250,'twelve':500,'mega':1250 };
+const getPoolPoints = (poolId) => {
+  const base = poolId.includes('-') ? poolId.split('-')[0] : poolId;
+  return POOL_POINTS[base] || 100;
+};
+
 const WALLETS = [
   '0xa0b1...c2d3','0xf4e5...a6b7','0xa1b2...c3d4',
   '0xb3c4...d5e6','0xd5e6...e7f8','0xe7f8...f9a0',
@@ -173,7 +180,7 @@ function WheelSVG({ angle, spinning, winners }) {
 }
 
 // ── Main DrawTheater ─────────────────────────────────────────
-export default function DrawTheater({ onClose }) {
+export default function DrawTheater({ onClose, onPointsEarned, activePerks }) {
   const { address } = useAccount();
   const shortAddr = address ? `${address.slice(0,6)}...${address.slice(-4)}` : null;
 
@@ -186,6 +193,7 @@ export default function DrawTheater({ onClose }) {
   const [history,  setHistory]  = useState([]);
   const [autoFired,setAutoFired]= useState(false);
   const [confetti, setConfetti] = useState(false);
+  const [pointsEarned, setPointsEarned] = useState(0);
   const angleRef = useRef(0);
 
   // Countdown
@@ -276,6 +284,20 @@ export default function DrawTheater({ onClose }) {
     setSpinning(false);
     setPhase('complete');
 
+    // Award WHEEL points to non-winners
+    if (onPointsEarned) {
+      const poolBase = selectedPool.id?.split('-')[0] || selectedPool.id || 'spin';
+      const ptsPerTicket = POOL_POINTS[poolBase] || 100;
+      // Check if boost perk is active
+      const boost = activePerks && activePerks.includes('points-boost') ? 2 : 1;
+      if (!userWon) {
+        const ptsEarned = ptsPerTicket * boost;
+        onPointsEarned(ptsEarned);
+        setPointsEarned(ptsEarned);
+        setTimeout(() => setPointsEarned(0), 3000);
+      }
+    }
+
     // Confetti if connected wallet won anything
     if (userWon) {
       setConfetti(true);
@@ -355,6 +377,22 @@ export default function DrawTheater({ onClose }) {
           cursor:'pointer', fontSize:10,
           fontFamily:"'Press Start 2P',monospace", outline:'none',
         }}>← BACK</button>
+      </div>
+
+      {/* Points earned toast */}
+      {pointsEarned > 0 && (
+        <div style={{
+          position:'fixed', bottom:24, right:24,
+          background:'#1a1600', border:'2px solid #FFDD00',
+          color:'#FFDD00', padding:'12px 18px',
+          fontSize:11, fontFamily:"'Press Start 2P',monospace",
+          zIndex:3000, boxShadow:'0 0 24px rgba(255,221,0,.4)',
+          animation:'blinkAnim .4s ease 0s 1',
+        }}>
+          🎡 +{pointsEarned.toLocaleString()} WHEEL PTS
+        </div>
+      )}
+      <div style={{display:'none'}}>
       </div>
 
       {/* BODY */}

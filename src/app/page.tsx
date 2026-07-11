@@ -24,10 +24,9 @@ const HERO = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQg
 
 // Base pool periods
 const POOL_PERIODS=[
-  {pid:"h1", name:"SPIN",  icon:"🎡",intervalH:1,  label:"EVERY HOUR",    color:"#FF6633",darkBg:"#1a0800",accent:"#FF9966",glow:"rgba(255,102,51,.4)"},
-  {pid:"h6", name:"SURGE", icon:"🌊",intervalH:6,  label:"EVERY 6 HOURS", color:"#00DDAA",darkBg:"#0a2a08",accent:"#44FFCC",glow:"rgba(0,221,170,.4)"},
-  {pid:"h12",name:"TWELVE",icon:"🔥",intervalH:12, label:"EVERY 12 HOURS",color:"#AA44FF",darkBg:"#0e0020",accent:"#CC88FF",glow:"rgba(170,68,255,.4)"},
-  {pid:"d1", name:"MEGA",  icon:"⚡",intervalH:24, label:"DAILY",         color:"#FFDD00",darkBg:"#1a1600",accent:"#FFE944",glow:"rgba(255,221,0,.4)"},
+  {pid:"h1", name:"HOURLY", icon:"🎡",intervalH:1,   label:"EVERY HOUR",  color:"#FF6633",darkBg:"#1a0800",accent:"#FF9966",glow:"rgba(255,102,51,.4)"},
+  {pid:"d1", name:"DAILY",  icon:"⚡",intervalH:24,  label:"DAILY",       color:"#FFDD00",darkBg:"#1a1600",accent:"#FFE944",glow:"rgba(255,221,0,.4)"},
+  {pid:"w1", name:"WEEKLY", icon:"👑",intervalH:168,  label:"WEEKLY",      color:"#AA44FF",darkBg:"#0e0020",accent:"#CC88FF",glow:"rgba(170,68,255,.4)"},
 ];
 const POOL_STAKES=[
   {entryUsd:2,  entryEth:"0.0008",entries:47},
@@ -275,8 +274,8 @@ function PenguinSVG({skin="Classic",hat="None",acc="None",size=80}){
 /* ══════════════════════════════════════════════
    DRAW THEATER
 ══════════════════════════════════════════════ */
-function DrawTheater({onClose}){
-  return <DrawTheaterFull onClose={onClose}/>;
+function DrawTheater({onClose,onPointsEarned,activePerks}){
+  return <DrawTheaterFull onClose={onClose} onPointsEarned={onPointsEarned} activePerks={activePerks}/>;
 }
 
 
@@ -609,6 +608,425 @@ function TicketSections({tickets,ethPrice,onMint,onDraw,msLeft,fmtMs}){
 }
 
 
+/* ══════════════════════════════════════════════
+   MY PROFILE / MY TICKETS
+══════════════════════════════════════════════ */
+
+// Level system based on total points earned
+function getLevel(pts){
+  if(pts>=10000)return{name:"LEGEND",  icon:"👑",color:"#FFD700",next:null};
+  if(pts>=5000) return{name:"ELITE",   icon:"💎",color:"#AA44FF",next:10000};
+  if(pts>=2000) return{name:"PRO",     icon:"🔥",color:"#FF6633",next:5000};
+  if(pts>=500)  return{name:"PLAYER",  icon:"⚡",color:"#00DDAA",next:2000};
+  return        {name:"ROOKIE",        icon:"🎡",color:"#9de8b4",next:500};
+}
+
+const ACHIEVEMENTS=[
+  {id:"first-entry", icon:"🎟",name:"FIRST ENTRY",   desc:"Enter your first pool",          pts:50,  check:(t,w,wins)=>t.length>=1},
+  {id:"first-win",   icon:"🏆",name:"FIRST WIN",     desc:"Win an ETH prize",               pts:200, check:(t,w,wins)=>wins>=1},
+  {id:"100-points",  icon:"⭐",name:"100 POINTS",    desc:"Earn 100 WHEEL points",          pts:0,   check:(t,w,wins)=>w>=100},
+  {id:"500-points",  icon:"🌟",name:"500 POINTS",    desc:"Earn 500 WHEEL points",          pts:100, check:(t,w,wins)=>w>=500},
+  {id:"5-entries",   icon:"🎯",name:"HIGH ROLLER",   desc:"Hold 5+ active tickets",         pts:150, check:(t,w,wins)=>t.length>=5},
+  {id:"3-pools",     icon:"🌊",name:"POOL HOPPER",   desc:"Enter 3 different pool types",   pts:100, check:(t,w,wins)=>{const ids=new Set(t.map(x=>x.poolId?.split("-")[0]));return ids.size>=3;}},
+  {id:"weekly",      icon:"📅",name:"WEEKLY PLAYER", desc:"Enter the weekly draw",          pts:200, check:(t,w,wins)=>t.some(x=>x.poolId?.startsWith("w1"))},
+  {id:"share",       icon:"📢",name:"AMBASSADOR",    desc:"Share WheelPool with friends",   pts:100, check:(t,w,wins,shared)=>shared},
+];
+
+function MyProfile({tickets,wheelPoints,activePerks,addPoints,ethPrice,onMint,onDraw,ms,fmtMs}){
+  const[shared,setShared]=useState(false);
+  const[shareFlash,setShareFlash]=useState(false);
+  const[claimedAch,setClaimedAch]=useState([]);
+
+  const level=getLevel(wheelPoints);
+  const totalEntries=tickets.length;
+  // Simulated stats for demo
+  const totalWins=Math.floor(totalEntries*0.1);
+  const winRate=totalEntries>0?((totalWins/totalEntries)*100).toFixed(1):"0.0";
+  const totalEthWon=(totalWins*0.025).toFixed(4);
+  const activeTickets=tickets; // all current tickets are active
+
+  const handleShare=()=>{
+    navigator.clipboard?.writeText("Check out WheelPool — prize pool dApp on Abstract Chain! https://wheelpool.vercel.app").catch(()=>{});
+    if(!shared){
+      addPoints(100);
+      setShared(true);
+      setShareFlash(true);
+      setTimeout(()=>setShareFlash(false),2000);
+    }
+  };
+
+  const claimAch=(ach)=>{
+    if(claimedAch.includes(ach.id)||!ach.pts)return;
+    addPoints(ach.pts);
+    setClaimedAch(p=>[...p,ach.id]);
+  };
+
+  const PERIOD_LABELS={"h1":"HOURLY","h6":"6H","h12":"12H","d1":"DAILY","w1":"WEEKLY"};
+
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:28}}>
+
+      {/* ── PROFILE HEADER ────────────────────── */}
+      <div style={{
+        background:"linear-gradient(135deg,#0a2a0a,#1a4a1a,#0a3a14)",
+        border:"2px solid #1BF26A44",padding:"24px",
+        display:"flex",gap:20,flexWrap:"wrap",alignItems:"center",
+      }}>
+        {/* Avatar — level icon */}
+        <div style={{
+          width:72,height:72,borderRadius:"50%",flexShrink:0,
+          background:`linear-gradient(135deg,${level.color}22,${level.color}44)`,
+          border:`3px solid ${level.color}`,
+          display:"flex",alignItems:"center",justifyContent:"center",
+          fontSize:32,
+        }}>{level.icon}</div>
+
+        {/* Identity */}
+        <div style={{flex:1,minWidth:180}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4,flexWrap:"wrap"}}>
+            <span style={{color:level.color,fontSize:14,fontFamily:"'Press Start 2P',monospace"}}>{level.name}</span>
+            <span style={{color:"#6aaa6a",fontSize:9,fontFamily:"'Press Start 2P',monospace"}}>WHEELPOOL MEMBER</span>
+          </div>
+          {level.next&&(
+            <div style={{marginBottom:8}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+                <span style={{color:"#6aaa6a",fontSize:8,fontFamily:"'Press Start 2P',monospace"}}>PROGRESS TO NEXT LEVEL</span>
+                <span style={{color:level.color,fontSize:8,fontFamily:"'Press Start 2P',monospace"}}>{wheelPoints}/{level.next}</span>
+              </div>
+              <div style={{height:6,background:"#0a1a0a",overflow:"hidden",borderRadius:3}}>
+                <div style={{width:`${Math.min(100,(wheelPoints/(level.next||1))*100)}%`,height:"100%",background:level.color,transition:"width .5s"}}/>
+              </div>
+            </div>
+          )}
+          <div style={{color:"#FFDD00",fontSize:18,fontFamily:"'VT323',monospace"}}>🎡 {wheelPoints.toLocaleString()} WHEEL POINTS</div>
+        </div>
+
+        {/* Share button */}
+        <button onClick={handleShare} style={{
+          background:shareFlash?"#1a3a00":shared?"#0a1a0a":"linear-gradient(135deg,#1a3a0a,#2a5a14)",
+          color:shared?"#44FF44":"#1BF26A",
+          border:`2px solid ${shared?"#44FF44":"#1BF26A"}`,
+          padding:"10px 16px",cursor:shared?"default":"pointer",
+          fontSize:9,fontFamily:"'Press Start 2P',monospace",
+          outline:"none",letterSpacing:1,
+          transition:"all .3s",
+          boxShadow:shareFlash?"0 0 20px rgba(27,242,106,.5)":"none",
+        }}>
+          {shared?"✓ SHARED +100 PTS":"📢 SHARE & EARN +100 PTS"}
+        </button>
+      </div>
+
+      {/* ── STATS ROW ─────────────────────────── */}
+      <div style={{display:"flex",gap:0,flexWrap:"wrap",background:"#0a2a0a",border:"1px solid #2a5a2a"}}>
+        {[
+          ["ENTRIES",     totalEntries.toString(),         "#1BF26A"],
+          ["WINS",        totalWins.toString(),            "#FFD700"],
+          ["WIN RATE",    `${winRate}%`,                   "#00DDAA"],
+          ["ETH WON",     `${totalEthWon}`,                "#FF6633"],
+          ["POINTS",      wheelPoints.toLocaleString(),    "#FFDD00"],
+        ].map(([l,v,c],i)=>(
+          <div key={l} style={{
+            flex:"1 1 80px",padding:"14px",textAlign:"center",
+            borderRight:i<4?"1px solid #2a5a2a":"none",
+          }}>
+            <div style={{color:"#6aaa6a",fontSize:8,fontFamily:"'Press Start 2P',monospace",marginBottom:6}}>{l}</div>
+            <div style={{color:c,fontSize:18,fontFamily:"'VT323',monospace"}}>{v}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── ACTIVE TICKETS ────────────────────── */}
+      <div>
+        <div style={{color:"#FFDD00",fontSize:11,fontFamily:"'Press Start 2P',monospace",marginBottom:14}}>🎟 ACTIVE ENTRIES</div>
+        {activeTickets.length===0?(
+          <div style={{background:"#0a2a0a",border:"1px dashed #2a5a2a",padding:"24px",textAlign:"center"}}>
+            <div style={{color:"#6aaa6a",fontSize:9,fontFamily:"'Press Start 2P',monospace",lineHeight:2}}>No active entries yet</div>
+            <button onClick={()=>{}} style={{marginTop:12,background:"#1a5414",color:"#1BF26A",border:"1px solid #1BF26A",padding:"8px 16px",cursor:"pointer",fontSize:9,fontFamily:"'Press Start 2P',monospace",outline:"none"}}>
+              GO TO POOLS →
+            </button>
+          </div>
+        ):(
+          <div style={{display:"flex",gap:10,overflowX:"auto",paddingBottom:8}}>
+            {activeTickets.map(t=>{
+              const pid=t.poolId?.split("-")[0]||"h1";
+              const period=POOL_PERIODS.find(p=>p.pid===pid)||POOL_PERIODS[0];
+              const stake=POOL_STAKES.find(s=>s.entryUsd===parseInt(t.poolId?.split("-")[1]))||POOL_STAKES[0];
+              const liveEth=(stake.entryUsd/ethPrice).toFixed(5);
+              const pool={...period,...stake,id:t.poolId,entryEth:liveEth,poolEth:(parseFloat(liveEth)*stake.entries).toFixed(4),glow:period.color+"44",offsetMin:0};
+              return <TicketCard key={t.id} ticket={t} pool={pool}/>;
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── TICKET HISTORY (simulated) ─────────── */}
+      <div>
+        <div style={{color:"#FFDD00",fontSize:11,fontFamily:"'Press Start 2P',monospace",marginBottom:14}}>📜 DRAW HISTORY</div>
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          {[
+            {id:"WP-H1-0022",pool:"HOURLY $2",  result:"POINTS", pts:100, ts:Date.now()-3600000},
+            {id:"WP-D1-0021",pool:"DAILY $5",   result:"POINTS", pts:250, ts:Date.now()-86400000},
+            {id:"WP-H1-0020",pool:"HOURLY $2",  result:"WIN",    eth:"0.0169",ts:Date.now()-7200000},
+            {id:"WP-W1-0019",pool:"WEEKLY $25", result:"POINTS", pts:1250,ts:Date.now()-604800000},
+            {id:"WP-H1-0018",pool:"HOURLY $5",  result:"POINTS", pts:250, ts:Date.now()-10800000},
+          ].map((h,i)=>{
+            const d=new Date(h.ts);
+            const isWin=h.result==="WIN";
+            return(
+              <div key={i} style={{
+                display:"flex",alignItems:"center",gap:12,
+                background:"#0a2a0a",border:"1px solid #1a4a1a",
+                padding:"10px 14px",flexWrap:"wrap",
+              }}>
+                <span style={{fontSize:16,flexShrink:0}}>{isWin?"🏆":"🎡"}</span>
+                <div style={{flex:"1 1 120px"}}>
+                  <div style={{color:"#9de8b4",fontSize:9,fontFamily:"'Press Start 2P',monospace"}}>{h.pool}</div>
+                  <div style={{color:"#6aaa6a",fontSize:8,fontFamily:"monospace",marginTop:2}}>{d.toLocaleDateString("en-GB")} {d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</div>
+                </div>
+                <div style={{textAlign:"right",flexShrink:0}}>
+                  {isWin?(
+                    <div style={{color:"#FFD700",fontSize:16,fontFamily:"'VT323',monospace"}}>+{h.eth} ETH</div>
+                  ):(
+                    <div style={{color:"#FFDD00",fontSize:16,fontFamily:"'VT323',monospace"}}>+{h.pts} PTS</div>
+                  )}
+                  <div style={{
+                    fontSize:8,fontFamily:"'Press Start 2P',monospace",
+                    color:isWin?"#FFD700":"#9de8b4",
+                  }}>{isWin?"WIN":"POINTS EARNED"}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── ACHIEVEMENTS ──────────────────────── */}
+      <div>
+        <div style={{color:"#FFDD00",fontSize:11,fontFamily:"'Press Start 2P',monospace",marginBottom:14}}>🏅 ACHIEVEMENTS</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:10}}>
+          {ACHIEVEMENTS.map(ach=>{
+            const unlocked=ach.check(tickets,wheelPoints,totalWins,shared);
+            const claimed=claimedAch.includes(ach.id);
+            return(
+              <div key={ach.id} style={{
+                background:unlocked?"linear-gradient(135deg,#1a3a0a,#1a4a14)":"#0a1a0a",
+                border:`1px solid ${unlocked?"#44FF44":"#2a4a2a"}`,
+                padding:"12px",opacity:unlocked?1:0.5,
+                display:"flex",gap:10,alignItems:"center",
+              }}>
+                <span style={{fontSize:20,flexShrink:0}}>{ach.icon}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{color:unlocked?"#44FF44":"#6aaa6a",fontSize:8,fontFamily:"'Press Start 2P',monospace",marginBottom:3}}>{ach.name}</div>
+                  <div style={{color:"#9de8b4",fontSize:9,fontFamily:"'VT323',monospace"}}>{ach.desc}</div>
+                  {ach.pts>0&&<div style={{color:"#FFDD00",fontSize:9,fontFamily:"'VT323',monospace",marginTop:2}}>+{ach.pts} pts bonus</div>}
+                </div>
+                {unlocked&&ach.pts>0&&!claimed&&(
+                  <button onClick={()=>claimAch(ach)} style={{
+                    background:"#1a3a00",color:"#44FF44",
+                    border:"1px solid #44FF44",padding:"4px 8px",
+                    cursor:"pointer",fontSize:7,
+                    fontFamily:"'Press Start 2P',monospace",outline:"none",flexShrink:0,
+                  }}>CLAIM</button>
+                )}
+                {claimed&&<span style={{color:"#44FF44",fontSize:14,flexShrink:0}}>✓</span>}
+                {unlocked&&!ach.pts&&<span style={{color:"#44FF44",fontSize:14,flexShrink:0}}>✓</span>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── REFERRAL ──────────────────────────── */}
+      <div style={{background:"#0a2a0a",border:"1px solid #2a5a2a",padding:"20px"}}>
+        <div style={{color:"#FFDD00",fontSize:11,fontFamily:"'Press Start 2P',monospace",marginBottom:8}}>🔗 YOUR REFERRAL LINK</div>
+        <div style={{color:"#6aaa6a",fontSize:9,fontFamily:"'Press Start 2P',monospace",marginBottom:12,lineHeight:2}}>
+          Share your link and earn 500 WHEEL points when a friend makes their first entry
+        </div>
+        <div style={{
+          display:"flex",gap:8,flexWrap:"wrap",
+          background:"#061406",border:"1px solid #2a5a2a",padding:"10px 12px",
+          color:"#9de8b4",fontSize:10,fontFamily:"monospace",marginBottom:10,
+          wordBreak:"break-all",
+        }}>
+          https://wheelpool.vercel.app?ref=0x1234...abcd
+        </div>
+        <button onClick={handleShare} style={{
+          background:"#1a3a0a",color:"#1BF26A",
+          border:"1px solid #1BF26A44",padding:"8px 16px",
+          cursor:"pointer",fontSize:9,
+          fontFamily:"'Press Start 2P',monospace",outline:"none",
+        }}>📋 COPY LINK</button>
+      </div>
+
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   WHEEL MARKETPLACE
+══════════════════════════════════════════════ */
+const PERKS=[
+  {id:"free-spin",   name:"FREE SPIN ENTRY",   desc:"Enter the SPIN pool ($2) completely free — one use",      cost:500,  icon:"🎡",color:"#FF6633",pool:"h1",  type:"free-entry"},
+  {id:"free-surge",  name:"FREE SURGE ENTRY",  desc:"Enter the SURGE pool ($5) completely free — one use",     cost:1000, icon:"🌊",color:"#00DDAA",pool:"h6",  type:"free-entry"},
+  {id:"free-twelve", name:"FREE TWELVE ENTRY", desc:"Enter the TWELVE pool ($10) completely free — one use",   cost:2000, icon:"🔥",color:"#AA44FF",pool:"h12", type:"free-entry"},
+  {id:"double-ticket",name:"DOUBLE TICKET",    desc:"Your next pool entry counts as 2 tickets — 2x odds",      cost:800,  icon:"✌️",color:"#FFDD00",pool:null,   type:"boost"},
+  {id:"points-boost", name:"2X POINTS BOOST",  desc:"Earn double WHEEL points from your next draw",            cost:300,  icon:"⚡",color:"#FFD700",pool:null,   type:"boost"},
+  {id:"early-access", name:"EARLY ACCESS",     desc:"Join the next draw 30 minutes before public open",        cost:150,  icon:"⏩",color:"#44FF44",pool:null,   type:"boost"},
+  {id:"vip-pool",     name:"VIP POOL ACCESS",  desc:"Exclusive high-prize pool for WHEEL holders — coming soon",cost:3000,icon:"👑",color:"#FFD700",pool:null,   type:"vip",comingSoon:true},
+  {id:"gold-badge",   name:"GOLD STATUS BADGE",desc:"Show off your loyalty on your profile — coming soon",     cost:500,  icon:"🏆",color:"#FFD700",pool:null,   type:"cosmetic",comingSoon:true},
+];
+
+const POINTS_PER_POOL={
+  "h1":100,"h6":250,"h12":500,"d1":1250,
+  "h1-2":100,"h1-5":250,"h1-10":500,"h1-25":1250,
+  "h6-2":100,"h6-5":250,"h6-10":500,"h6-25":1250,
+  "h12-2":100,"h12-5":250,"h12-10":500,"h12-25":1250,
+  "d1-2":100,"d1-5":250,"d1-10":500,"d1-25":1250,
+};
+
+function WheelMarketplace({points,activePerks,onSpend,onActivate,pools,ethPrice,onMint}){
+  const[confirm,setConfirm]=useState(null);
+  const[flash,setFlash]=useState(null);
+
+  const purchase=(perk)=>{
+    if(points<perk.cost||perk.comingSoon)return;
+    onSpend(perk.cost);
+    onActivate(perk.id);
+    setConfirm(null);
+    setFlash(perk.id);
+    setTimeout(()=>setFlash(null),2000);
+  };
+
+  const owned=(id)=>activePerks.includes(id);
+
+  return(
+    <div>
+      {/* How to earn points */}
+      <div style={{background:"#0a3a0a",border:"1px solid #2a7a22",padding:"16px 20px",marginBottom:28}}>
+        <div style={{color:"#FFDD00",fontSize:10,fontFamily:"'Press Start 2P',monospace",marginBottom:12}}>HOW TO EARN POINTS</div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          {[
+            {pool:"SPIN",   pts:100,  color:"#FF6633"},
+            {pool:"SURGE",  pts:250,  color:"#00DDAA"},
+            {pool:"TWELVE", pts:500,  color:"#AA44FF"},
+            {pool:"MEGA",   pts:1250, color:"#FFDD00"},
+          ].map(r=>(
+            <div key={r.pool} style={{
+              background:"#145414",border:`1px solid ${r.color}44`,
+              padding:"8px 14px",flex:"1 1 120px",
+            }}>
+              <div style={{color:r.color,fontSize:9,fontFamily:"'Press Start 2P',monospace",marginBottom:4}}>{r.pool}</div>
+              <div style={{color:"#FFDD00",fontSize:14,fontFamily:"'VT323',monospace"}}>{r.pts} PTS</div>
+              <div style={{color:"#9de8b4",fontSize:8,fontFamily:"monospace"}}>per non-winning ticket</div>
+            </div>
+          ))}
+        </div>
+        <div style={{color:"#6aaa6a",fontSize:8,fontFamily:"'Press Start 2P',monospace",marginTop:10,lineHeight:2}}>
+          Points are awarded automatically after each draw to all non-winning ticket holders. Points cannot be transferred or redeemed for ETH.
+        </div>
+      </div>
+
+      {/* Perk grid */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:16}}>
+        {PERKS.map(perk=>{
+          const canAfford=points>=perk.cost;
+          const isOwned=owned(perk.id);
+          const isFlashing=flash===perk.id;
+          return(
+            <div key={perk.id} style={{
+              background:isOwned?"linear-gradient(160deg,#1a3a0a,#2a5a14)":isFlashing?"linear-gradient(160deg,#1a2a00,#2a4a00)":"linear-gradient(160deg,#0e2a0e,#145414)",
+              border:`2px solid ${isOwned?perk.color:canAfford?perk.color+"88":"#2a5a2a"}`,
+              borderTop:`3px solid ${isOwned?"#FFD700":perk.comingSoon?"#3a5a3a":perk.color}`,
+              padding:"18px",
+              opacity:perk.comingSoon?0.6:1,
+              position:"relative",
+              transition:"all .3s",
+            }}>
+              {/* Coming soon banner */}
+              {perk.comingSoon&&(
+                <div style={{position:"absolute",top:8,right:8,background:"#1a1600",border:"1px solid #FFDD0066",color:"#FFDD0088",fontSize:8,fontFamily:"'Press Start 2P',monospace",padding:"2px 6px"}}>
+                  SOON
+                </div>
+              )}
+              {/* Owned banner */}
+              {isOwned&&(
+                <div style={{position:"absolute",top:8,right:8,background:"#1a3a00",border:"1px solid #44FF44",color:"#44FF44",fontSize:8,fontFamily:"'Press Start 2P',monospace",padding:"2px 6px"}}>
+                  ✓ ACTIVE
+                </div>
+              )}
+
+              <div style={{fontSize:28,marginBottom:10}}>{perk.icon}</div>
+              <div style={{color:perk.color,fontSize:11,fontFamily:"'Press Start 2P',monospace",marginBottom:6,lineHeight:1.5}}>{perk.name}</div>
+              <div style={{color:"#9de8b4",fontSize:10,fontFamily:"'VT323',monospace",marginBottom:14,lineHeight:1.5}}>{perk.desc}</div>
+
+              {/* Cost */}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                <div style={{color:"#FFDD00",fontSize:16,fontFamily:"'VT323',monospace"}}>
+                  🎡 {perk.cost.toLocaleString()} PTS
+                </div>
+                {!canAfford&&!isOwned&&!perk.comingSoon&&(
+                  <div style={{color:"#FF4444",fontSize:8,fontFamily:"'Press Start 2P',monospace"}}>
+                    -{(perk.cost-points).toLocaleString()} pts
+                  </div>
+                )}
+              </div>
+
+              {/* Action button */}
+              {!perk.comingSoon&&(
+                confirm===perk.id?(
+                  <div style={{display:"flex",gap:6}}>
+                    <button onClick={()=>purchase(perk)} style={{
+                      flex:1,padding:"8px 0",background:perk.color,color:"#000",
+                      border:"none",cursor:"pointer",fontSize:9,
+                      fontFamily:"'Press Start 2P',monospace",outline:"none",fontWeight:"bold",
+                    }}>CONFIRM</button>
+                    <button onClick={()=>setConfirm(null)} style={{
+                      flex:1,padding:"8px 0",background:"transparent",color:"#FF4444",
+                      border:"1px solid #FF4444",cursor:"pointer",fontSize:9,
+                      fontFamily:"'Press Start 2P',monospace",outline:"none",
+                    }}>CANCEL</button>
+                  </div>
+                ):(
+                  <button
+                    onClick={()=>!isOwned&&canAfford&&setConfirm(perk.id)}
+                    disabled={!canAfford||isOwned}
+                    style={{
+                      width:"100%",padding:"10px 0",
+                      background:isOwned?"#1a3a00":canAfford?`linear-gradient(90deg,${perk.color}22,${perk.color}44)`:"#0a1a0a",
+                      color:isOwned?"#44FF44":canAfford?perk.color:"#3a5a3a",
+                      border:`1px solid ${isOwned?"#44FF44":canAfford?perk.color:"#2a4a2a"}`,
+                      cursor:isOwned||!canAfford?"default":"pointer",
+                      fontSize:9,fontFamily:"'Press Start 2P',monospace",outline:"none",
+                    }}
+                  >
+                    {isOwned?"✓ REDEEMED":canAfford?"REDEEM →":"NOT ENOUGH PTS"}
+                  </button>
+                )
+              )}
+              {perk.comingSoon&&(
+                <button disabled style={{
+                  width:"100%",padding:"10px 0",background:"#0a1a0a",
+                  color:"#3a5a3a",border:"1px solid #2a4a2a",
+                  fontSize:9,fontFamily:"'Press Start 2P',monospace",outline:"none",cursor:"default",
+                }}>COMING SOON</button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Points not enough message */}
+      {points===0&&(
+        <div style={{textAlign:"center",marginTop:32,padding:24,background:"#0a2a0a",border:"1px solid #2a5a2a"}}>
+          <div style={{fontSize:32,marginBottom:12}}>🎡</div>
+          <div style={{color:"#9de8b4",fontSize:10,fontFamily:"'Press Start 2P',monospace",marginBottom:8}}>No points yet</div>
+          <div style={{color:"#6aaa6a",fontSize:9,fontFamily:"'Press Start 2P',monospace",lineHeight:2}}>Enter pools and participate in draws to earn WHEEL points</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function WheelPool(){
   const[now,setNow]=useState(Date.now());
   const connected=false;const wallet="";const ethBalance="0.0000";
@@ -616,6 +1034,11 @@ export default function WheelPool(){
   const[priceLoading,setPriceLoading]=useState(false);
   const[mounted,setMounted]=useState(false);
   useEffect(()=>setMounted(true),[]);
+  const[wheelPoints,setWheelPoints]=useState(0);
+  const[activePerks,setActivePerks]=useState([]);
+  const addPoints=(pts)=>setWheelPoints(p=>p+pts);
+  const spendPoints=(pts)=>setWheelPoints(p=>Math.max(0,p-pts));
+  const activatePerk=(id)=>setActivePerks(p=>[...p,id]);
   useEffect(()=>{
     const fp=async()=>{try{const r=await fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT');const d=await r.json();if(d.price)setEthPrice(parseFloat(parseFloat(d.price).toFixed(2)));}catch(e){}finally{setPriceLoading(false);}};
     fp();const id=setInterval(fp,300000);return()=>clearInterval(id);
@@ -655,7 +1078,14 @@ export default function WheelPool(){
           <span style={{color:"#44FF44"}}>Pool</span>
         </div>
 
-                <div className="header-wallet" style={{flex:"0 0 auto",display:"flex",alignItems:"center",justifyContent:"flex-end",order:2}}>
+                <div className="header-wallet" style={{flex:"0 0 auto",display:"flex",alignItems:"center",gap:8,justifyContent:"flex-end",order:2}}>
+          {wheelPoints>0&&<div style={{
+            background:"#1a1600",border:"1px solid #FFDD00",
+            color:"#FFDD00",padding:"5px 10px",
+            fontSize:"clamp(8px,1.8vw,10px)",
+            fontFamily:"'Press Start 2P',monospace",
+            whiteSpace:"nowrap",letterSpacing:1,
+          }}>🎡 {wheelPoints.toLocaleString()} PTS</div>}
           <ConnectButton />
         </div>
       </div>
@@ -666,7 +1096,7 @@ export default function WheelPool(){
         borderTop:"1px solid rgba(27,242,106,.22)",
         background:"rgba(8,50,8,.6)",
       }}>
-        {[["home","🎡 POOLS"],["tickets","🎟 TICKETS"],["how","📖 HOW"]].map(([k,l])=>(
+        {[["home","🎡 POOLS"],["tickets","🎟 TICKETS"],["market","🏪 MARKET"],["how","📖 HOW"]].map(([k,l])=>(
           <button key={k} onClick={()=>setNav(k)} className="nav-item" style={{
             flex:1,
             background:"none",border:"none",cursor:"pointer",
@@ -744,17 +1174,35 @@ export default function WheelPool(){
         <div style={{maxWidth:1060,margin:"0 auto"}}>
           <h2 style={{textAlign:"center",fontSize:"clamp(24px,6vw,34px)",color:"#FFDD00",textShadow:"3px 3px 0 #000",letterSpacing:2,marginBottom:8}}>🎰 CHOOSE A POOL</h2>
           <div style={{textAlign:"center",color:"#c0f0d0",fontSize:"clamp(16px,4vw,20px)",marginBottom:28}}>Draws every 1H · 6H · 24H &nbsp;·&nbsp; More tickets = better odds &nbsp;·&nbsp; One ticket can win multiple prizes</div>
-          <div style={{display:"flex",gap:12,overflowX:"auto",paddingBottom:8,alignItems:"stretch"}}>
-            {POOLS.map(pool=>(<PoolCard key={pool.id} pool={pool} msLeft={ms(pool)} myTickets={myT(pool.id)} onMint={()=>setMintPool(pool)} onDraw={()=>setDrawPool(pool)}/>))}
+          <div>
+            <TicketSections tickets={tickets} ethPrice={ethPrice} onMint={p=>setMintPool(p)} onDraw={p=>setDrawPool(p)} msLeft={ms} fmtMs={fmtMs}/>
           </div>
         </div>
       </section>
     </>}
 
-    {nav==="tickets"&&<section style={{padding:"48px 20px",maxWidth:1060,margin:"0 auto"}}>
-      <h2 style={{textAlign:"center",fontSize:"clamp(20px,5vw,30px)",color:"#FFDD00",letterSpacing:2,marginBottom:6}}>🎟 MY ENTRIES</h2>
-      <div style={{textAlign:"center",color:"#c0f0d0",fontSize:"clamp(12px,3vw,16px)",marginBottom:28}}>{tickets.length} entr{tickets.length===1?"y":"ies"}</div>
-      <TicketSections tickets={tickets} pools={POOLS} ethPrice={ethPrice} onMint={p=>setMintPool(p)} onDraw={p=>setDrawPool(p)} msLeft={ms} fmtMs={fmtMs}/>
+    {nav==="tickets"&&<section style={{padding:"32px 20px",maxWidth:1060,margin:"0 auto"}}>
+      <MyProfile
+        tickets={tickets}
+        wheelPoints={wheelPoints}
+        activePerks={activePerks}
+        addPoints={addPoints}
+        ethPrice={ethPrice}
+        onMint={p=>setMintPool(p)}
+        onDraw={p=>setDrawPool(p)}
+        ms={ms}
+        fmtMs={fmtMs}
+      />
+    </section>}
+    {nav==="market"&&<section style={{padding:"48px 20px",maxWidth:1060,margin:"0 auto"}}>
+      <h2 style={{textAlign:"center",fontSize:"clamp(20px,5vw,30px)",color:"#FFDD00",letterSpacing:2,marginBottom:6}}>🏪 WHEEL MARKET</h2>
+      <div style={{textAlign:"center",color:"#c0f0d0",fontSize:"clamp(10px,2.5vw,14px)",marginBottom:8}}>Spend WHEEL points on exclusive perks</div>
+      <div style={{textAlign:"center",marginBottom:28}}>
+        <span style={{background:"#1a1600",border:"2px solid #FFDD00",color:"#FFDD00",padding:"8px 18px",fontSize:12,fontFamily:"'Press Start 2P',monospace"}}>
+          🎡 {wheelPoints.toLocaleString()} WHEEL POINTS
+        </span>
+      </div>
+      <WheelMarketplace points={wheelPoints} activePerks={activePerks} onSpend={spendPoints} onActivate={activatePerk} pools={POOLS} ethPrice={ethPrice} onMint={p=>setMintPool(p)}/>
     </section>}
     {nav==="how"&&<section style={{padding:"48px 20px",background:"#0d4a1e"}}>
       <div style={{maxWidth:900,margin:"0 auto"}}>
@@ -865,6 +1313,6 @@ export default function WheelPool(){
       <div style={{color:"#c0f0d0",fontSize:"clamp(11px,2.2vw,14px)"}}> Built on Abstract Chain · NFT Tickets · Auto Payouts · Keeper + VRF + Paymaster</div>
     </footer>
 
-    {drawPool&&<DrawTheater pool={drawPool} userTickets={tickets} drawTime={getNextSpin(drawPool.intervalH,drawPool.offsetMin)} onClose={()=>setDrawPool(null)}/>}
+    {mounted&&drawPool&&<DrawTheater onClose={()=>setDrawPool(null)} onPointsEarned={addPoints} activePerks={activePerks}/>}
     {mounted&&mintPool&&<MintModal pool={mintPool} onClose={()=>setMintPool(null)} onMinted={t=>{setTickets(p=>[t,...p]);setMintPool(null);setNav("tickets");}}/>}
   </div>);}
