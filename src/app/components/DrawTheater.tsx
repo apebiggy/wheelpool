@@ -192,6 +192,7 @@ export default function DrawTheater({ onClose, onPointsEarned, activePerks }) {
   const [results,  setResults]  = useState([]);
   const [history,  setHistory]  = useState([]);
   const [autoFired,setAutoFired]= useState(false);
+  const runDrawRef = useRef(null);
   const [confetti, setConfetti] = useState(false);
   const [pointsEarned, setPointsEarned] = useState(0);
   const angleRef = useRef(0);
@@ -206,13 +207,22 @@ export default function DrawTheater({ onClose, onPointsEarned, activePerks }) {
     const tick = setInterval(() => {
       const rem = getNextDraw(selectedPool.intervalH) - Date.now();
       setMsLeft(rem);
-      if (rem <= 0 && !autoFired) { clearInterval(tick); setAutoFired(true); }
+      if (rem <= 0) {
+        clearInterval(tick);
+        setAutoFired(true);
+        setTimeout(() => {
+          if (runDrawRef.current) runDrawRef.current();
+        }, 500);
+      }
     }, 500);
     setMsLeft(getNextDraw(selectedPool.intervalH) - Date.now());
     return () => clearInterval(tick);
   }, [selectedPool.id]);
 
-  useEffect(() => { if (autoFired) runDraw(); }, [autoFired]);
+  // auto-fire handled directly in countdown interval via runDrawRef
+
+  // Always keep ref pointing to latest runDraw
+  useEffect(() => { runDrawRef.current = runDraw; }, [runDraw]);
 
   // History with pool name + fake TX hash
   useEffect(() => {
