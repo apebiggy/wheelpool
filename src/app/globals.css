@@ -136,3 +136,32 @@ button, a, [role="button"] { outline: none; }
     flex: 0 0 260px !important;
   }
 }
+
+/* ── Nav: hide emojis on mobile ────────────── */
+@media (max-width: 480px) {
+  .nav-emoji { display: none; }
+}
+
+/* ── Wallet: swap desktop/mobile views ─────── */
+.wallet-mobile { display: none !important; }
+@media (max-width: 600px) {
+  .wallet-desktop { display: none !important; }
+  .wallet-mobile  { display: flex !important; }
+  .wallet-balance { display: none !important; }
+
+  /* Header row 1 compact on mobile */
+  .header-row1 {
+    padding: 6px 10px !important;
+    gap: 6px !important;
+  }
+  .header-logo {
+    font-size: 22px !important;
+  }
+}
+
+/* ── Hero wheel: lower on mobile ───────────── */
+@media (max-width: 600px) {
+  .hero-wheel {
+    top: 80% !important;
+  }
+}

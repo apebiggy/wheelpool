@@ -1133,15 +1133,15 @@ export default function WheelPool(){
           <span style={{color:"#44FF44"}}>Pool</span>
         </div>
 
-                <div className="header-wallet" style={{flex:"0 0 auto",display:"flex",alignItems:"center",gap:8,justifyContent:"flex-end",order:2}}>
-          {wheelPoints>0&&<div style={{
+                <div className="header-wallet" style={{flex:"0 0 auto",display:"flex",alignItems:"center",gap:6,justifyContent:"flex-end",order:2}}>
+          {wheelPoints>0&&<div className="wallet-balance" style={{
             background:"#1a1600",border:"1px solid #FFDD00",
-            color:"#FFDD00",padding:"5px 10px",
-            fontSize:"clamp(8px,1.8vw,10px)",
+            color:"#FFDD00",padding:"4px 8px",
+            fontSize:"clamp(7px,1.6vw,9px)",
             fontFamily:"'Press Start 2P',monospace",
-            whiteSpace:"nowrap",letterSpacing:1,
-          }}>🎡 {wheelPoints.toLocaleString()} PTS</div>}
-          <ConnectButton />
+            whiteSpace:"nowrap",
+          }}>🎡 {wheelPoints.toLocaleString()}</div>}
+          <ConnectButton/>
         </div>
       </div>
 
@@ -1151,7 +1151,7 @@ export default function WheelPool(){
         borderTop:"1px solid rgba(27,242,106,.22)",
         background:"rgba(8,50,8,.6)",
       }}>
-        {[["home","🎡 POOLS"],["tickets","🎟 TICKETS"],["market","🏪 MARKET"],["how","📖 HOW"]].map(([k,l])=>(
+        {[["home","🎡 POOLS"],["tickets","👤 PROFILE"],["market","🏪 MARKET"],["how","📖 HOW"]].map(([k,l])=>(
           <button key={k} onClick={()=>setNav(k)} className="nav-item" style={{
             flex:1,
             background:"none",border:"none",cursor:"pointer",
@@ -1162,7 +1162,7 @@ export default function WheelPool(){
             letterSpacing:1,
             borderBottom:nav===k?"3px solid #FFDD00":"3px solid transparent",
             transition:"color .15s, border-color .15s",
-          }}>{l}</button>
+          }}><span className="nav-emoji">{emoji} </span>{label}</button>
         ))}
       </nav>
     </header>
@@ -1178,7 +1178,7 @@ export default function WheelPool(){
         
 
         {/* interactive wheel — smaller, sits over image wheel, WheelPool banner stays visible */}
-        <div className="hero-wheel" style={{position:"absolute",top:"65%",left:"50%",transform:"translate(-50%, -50%)",zIndex:3}}>
+        <div className="hero-wheel" style={{position:"absolute",top:"68%",left:"50%",transform:"translate(-50%, -50%)",zIndex:3}}>
           <InteractiveWheel size={wheelSize}/>
         </div>
       </section>
