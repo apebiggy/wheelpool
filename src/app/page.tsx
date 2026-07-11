@@ -1265,7 +1265,7 @@ export default function WheelPool(){
       </section>
     </>}
 
-    {nav==="tickets"&&<section style={{padding:"32px 20px",paddingTop:"108px",maxWidth:1060,margin:"0 auto"}}>
+    {nav==="tickets"&&<section style={{padding:"20px 20px",paddingTop:"130px",maxWidth:1060,margin:"0 auto"}}>
       <MyProfile
         tickets={tickets}
         wheelPoints={wheelPoints}
@@ -1278,7 +1278,7 @@ export default function WheelPool(){
         fmtMs={fmtMs}
       />
     </section>}
-    {nav==="market"&&<section style={{padding:"48px 20px",paddingTop:"108px",maxWidth:1060,margin:"0 auto"}}>
+    {nav==="market"&&<section style={{padding:"20px 20px",paddingTop:"130px",maxWidth:1060,margin:"0 auto"}}>
       <h2 style={{textAlign:"center",fontSize:"clamp(20px,5vw,30px)",color:"#FFDD00",letterSpacing:2,marginBottom:6}}>🏪 WHEEL MARKET</h2>
       <div style={{textAlign:"center",color:"#c0f0d0",fontSize:"clamp(10px,2.5vw,14px)",marginBottom:8}}>Spend WHEEL points on exclusive perks</div>
       <div style={{textAlign:"center",marginBottom:28}}>
@@ -1288,7 +1288,7 @@ export default function WheelPool(){
       </div>
       <WheelMarketplace points={wheelPoints} activePerks={activePerks} onSpend={spendPoints} onActivate={activatePerk} pools={POOLS} ethPrice={ethPrice} onMint={p=>setMintPool(p)}/>
     </section>}
-    {nav==="how"&&<section style={{padding:"48px 20px",paddingTop:"108px",background:"#0d4a1e"}}>
+    {nav==="how"&&<section style={{padding:"20px 20px",paddingTop:"130px",background:"#0d4a1e"}}>
       <div style={{maxWidth:900,margin:"0 auto"}}>
         <h2 style={{textAlign:"center",fontSize:"clamp(24px,6vw,34px)",color:"#FFDD00",letterSpacing:2,marginBottom:48}}>📖 HOW IT WORKS</h2>
 
