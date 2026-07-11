@@ -395,15 +395,19 @@ function PoolCard({pool,msLeft,myTickets,onMint,onDraw,ethPrice=3000}){
     <div style={{position:"absolute",top:10,right:12,fontSize:24,zIndex:2}}>{pool.icon}</div>
 
     <div style={{marginBottom:14,marginTop:60}}>
-      <div style={{fontSize:"clamp(16px,4.5vw,22px)",color:pool.color,letterSpacing:3,marginBottom:4,textShadow:`0 0 18px ${pool.glow}`}}>{pool.name}</div>
-      <div style={{fontSize:"clamp(11px,2.2vw,14px)",color:"#9de8b4"}}>{pool.label}</div>
+      <div style={{fontSize:"clamp(10px,2vw,12px)",color:"#9de8b4",letterSpacing:2,marginBottom:2}}>{pool.label}</div>
+      <div style={{
+        color:pool.color,fontSize:"clamp(22px,4vw,30px)",
+        fontFamily:"'VT323',monospace",lineHeight:1,marginBottom:2,
+      }}>${Math.round(parseFloat(pool.poolEth||"0")*ethPrice).toLocaleString()} POOL</div>
+      <div style={{fontSize:"clamp(8px,1.4vw,10px)",color:"#9de8b4",fontFamily:"'VT323',monospace"}}>entry {pool.entryEth} ETH (~${pool.entryUsd})</div>
     </div>
     <div style={{background:"#0f5422",border:"1px solid #3a7a22",padding:"12px",textAlign:"center",marginBottom:16}}>
       <div style={{color:"#c0f0d0",fontSize:11,marginBottom:5}}>NEXT DRAW IN</div>
       <div style={{fontSize:"clamp(22px,6vw,30px)",letterSpacing:4,fontFamily:"'VT323',monospace",color:urgent?"#FF4444":soon?"#FFDD00":pool.color,animation:urgent?"blinkAnim .7s infinite":"none"}}>{fmtMs(msLeft)}</div>
     </div>
     <div style={{marginBottom:16,display:"flex",flexDirection:"column",gap:7}}>
-      {[["1 TICKET",`${pool.entryEth} ETH · ~$${pool.entryUsd}`,"#bbb"],["IN POOL",`${pool.entries} tickets`,"#aaa"],["POOL SIZE",`${pool.poolEth} ETH`,"#FFDD00"],["🥇 JACKPOT",`${pool.jackpot} ETH`,pool.accent]].map(([l,v,c])=>(<div key={l} style={{display:"flex",justifyContent:"space-between"}}><span style={{color:"#c0f0d0",fontSize:"clamp(11px,2.2vw,14px)"}}> {l}</span><span style={{color:c,fontSize:11}}>{v}</span></div>))}
+      {[["IN POOL",`${pool.entries} tickets`,"#9de8b4"],["JACKPOT 🥇",`${pool.jackpot} ETH`,pool.accent]].map(([l,v,c])=>(<div key={l} style={{display:"flex",justifyContent:"space-between"}}><span style={{color:"#c0f0d0",fontSize:"clamp(11px,2.2vw,14px)"}}> {l}</span><span style={{color:c,fontSize:11}}>{v}</span></div>))}
     </div>
     {/* minimum ticket progress bar */}
     <div style={{marginBottom:12}}>
