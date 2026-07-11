@@ -376,12 +376,12 @@ function MintModal({pool,onClose,onMinted}){
 /* ══════════════════════════════════════════════
    POOL CARD
 ══════════════════════════════════════════════ */
-function PoolCard({pool,msLeft,myTickets,onMint,onDraw}){
+function PoolCard({pool,msLeft,myTickets,onMint,onDraw,ethPrice=3000}){
   const[hov,setHov]=useState(false);
   const soon=msLeft<3600000,urgent=msLeft<300000;
   const mc=myTickets.length;
   const myOdds=mc>0?Math.min(99,(mc/pool.entries*100)).toFixed(1):null;
-  return(<div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{flex:"0 0 260px",minWidth:240,background:`linear-gradient(160deg,${pool.darkBg},#1a6830)`,border:`2px solid ${hov?pool.color+"99":"#2a9444"}`,transition:"border-color .25s,transform .2s",transform:hov?"translateY(-5px)":"none",padding:"24px",position:"relative",overflow:"hidden"}}>
+  return(<div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{flex:"1 1 220px",minWidth:220,maxWidth:300,background:`linear-gradient(160deg,${pool.darkBg},#1a6830)`,border:`2px solid ${hov?pool.color+"99":"#2a9444"}`,transition:"border-color .25s,transform .2s",transform:hov?"translateY(-5px)":"none",padding:"24px",position:"relative",overflow:"hidden"}}>
     {hov&&<div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse at 50% 0%,${pool.glow} 0%,transparent 65%)`,opacity:.3,pointerEvents:"none"}}/>}
 
     {/* ── Big price badge ── */}
@@ -1219,7 +1219,7 @@ export default function WheelPool(){
             {(()=>{
               const period=POOL_PERIODS.find(p=>p.pid===selectedPeriod)||POOL_PERIODS[0];
               return(
-                <div style={{display:"flex",gap:12,overflowX:"auto",paddingBottom:8,alignItems:"stretch"}}>
+                <div style={{display:"flex",gap:12,overflowX:"auto",paddingBottom:8,alignItems:"stretch",flexWrap:"nowrap"}}>
                   {POOL_STAKES.map(stake=>{
                     const liveEth=(stake.entryUsd/ethPrice).toFixed(6);
                     const livePool=(parseFloat(liveEth)*stake.entries).toFixed(4);
@@ -1248,6 +1248,7 @@ export default function WheelPool(){
                         myTickets={myT(pool.id)}
                         onMint={()=>setMintPool(pool)}
                         onDraw={()=>setDrawPool(pool)}
+                        ethPrice={ethPrice}
                       />
                     );
                   })}
