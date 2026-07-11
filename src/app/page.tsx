@@ -637,6 +637,63 @@ function TicketSections({tickets,ethPrice,onMint,onDraw,msLeft,fmtMs}){
 
 
 /* ══════════════════════════════════════════════
+   WALLET SECTION (used in Profile tab)
+══════════════════════════════════════════════ */
+function WalletSection(){
+  // Access wagmi hooks for wallet state in profile
+  const[addr,setAddr]=useState("");
+  const[bal,setBal]=useState("0.0000");
+  useEffect(()=>{
+    // Read from wagmi via window if available — no extra imports needed
+    try{
+      const w=document.querySelector("[data-wallet-address]");
+      if(w)setAddr(w.getAttribute("data-wallet-address")||"");
+    }catch(e){}
+  },[]);
+
+  return(
+    <div style={{background:"linear-gradient(135deg,#0a2a14,#145414)",border:"2px solid #1BF26A44",padding:"20px"}}>
+      <div style={{color:"#1BF26A",fontSize:10,fontFamily:"'Press Start 2P',monospace",marginBottom:14,letterSpacing:1}}>
+        ⚡ WALLET
+      </div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          <div style={{color:"#9de8b4",fontSize:9,fontFamily:"'Press Start 2P',monospace"}}>CONNECTED VIA ABSTRACT GLOBAL WALLET</div>
+          <div style={{color:"#1BF26A",fontSize:12,fontFamily:"monospace"}}>
+            {addr||"Connect wallet to see address"}
+          </div>
+        </div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          <button
+            onClick={()=>typeof window!=="undefined"&&window.location.reload()}
+            style={{
+              background:"#0a2010",color:"#1BF26A",
+              border:"1px solid #1BF26A",padding:"8px 12px",
+              cursor:"pointer",fontSize:9,
+              fontFamily:"'Press Start 2P',monospace",outline:"none",
+            }}>
+            SWITCH WALLET
+          </button>
+          <button
+            onClick={()=>{
+              // Trigger disconnect via DOM event
+              document.dispatchEvent(new CustomEvent("wheelpool-disconnect"));
+            }}
+            style={{
+              background:"#2a0808",color:"#FF4444",
+              border:"1px solid #FF4444",padding:"8px 12px",
+              cursor:"pointer",fontSize:9,
+              fontFamily:"'Press Start 2P',monospace",outline:"none",
+            }}>
+            LOG OUT
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════
    MY PROFILE / MY TICKETS
 ══════════════════════════════════════════════ */
 
@@ -693,6 +750,9 @@ function MyProfile({tickets,wheelPoints,activePerks,addPoints,ethPrice,onMint,on
 
   return(
     <div style={{display:"flex",flexDirection:"column",gap:28}}>
+
+      {/* ── WALLET CONNECTION ─────────────────── */}
+      <WalletSection onClose={()=>{}}/>
 
       {/* ── PROFILE HEADER ────────────────────── */}
       <div style={{
@@ -1155,12 +1215,13 @@ export default function WheelPool(){
             flex:1,
             background:"none",border:"none",cursor:"pointer",
             color:nav===k?"#FFDD00":"#9de8b4",
-            padding:"9px 4px",
+            padding:"10px 0",
             fontFamily:"'Press Start 2P',monospace",
-            fontSize:"clamp(11px,2.8vw,16px)",
+            fontSize:"clamp(9px,2vw,13px)",
             letterSpacing:1,
             borderBottom:nav===k?"3px solid #FFDD00":"3px solid transparent",
             transition:"color .15s, border-color .15s",
+            textAlign:"center",
           }}><span className="nav-emoji">{emoji} </span>{label}</button>
         ))}
       </nav>
@@ -1326,9 +1387,16 @@ export default function WheelPool(){
       <h2 style={{textAlign:"center",fontSize:"clamp(20px,5vw,30px)",color:"#FFDD00",letterSpacing:2,marginBottom:6}}>🏪 WHEEL MARKET</h2>
       <div style={{textAlign:"center",color:"#c0f0d0",fontSize:"clamp(10px,2.5vw,14px)",marginBottom:8}}>Spend WHEEL points on exclusive perks</div>
       <div style={{textAlign:"center",marginBottom:28}}>
-        <span style={{background:"#1a1600",border:"2px solid #FFDD00",color:"#FFDD00",padding:"8px 18px",fontSize:12,fontFamily:"'Press Start 2P',monospace"}}>
-          🎡 {wheelPoints.toLocaleString()} WHEEL POINTS
-        </span>
+        <div style={{
+          display:"inline-flex",alignItems:"center",gap:8,
+          background:"#1a1600",border:"2px solid #FFDD00",
+          color:"#FFDD00",padding:"10px 20px",
+          fontSize:11,fontFamily:"'Press Start 2P',monospace",
+          boxShadow:"0 0 16px rgba(255,221,0,.3)",
+        }}>
+          <span style={{fontSize:16}}>🎡</span>
+          <span>{wheelPoints.toLocaleString()} WHEEL POINTS</span>
+        </div>
       </div>
       <WheelMarketplace points={wheelPoints} activePerks={activePerks} onSpend={spendPoints} onActivate={activatePerk} pools={POOLS} ethPrice={ethPrice} onMint={p=>setMintPool(p)}/>
     </section>}

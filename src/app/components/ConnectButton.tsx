@@ -5,7 +5,7 @@ import { useAccount, useConnect, useDisconnect, useBalance } from "wagmi";
 import { abstractWalletConnector } from "@abstract-foundation/agw-react/connectors";
 import { formatUnits } from "viem";
 
-export function ConnectButton({ wheelPoints = 0 }: { wheelPoints?: number }) {
+export function ConnectButton() {
   const { login, logout } = useLoginWithAbstract();
   const { address, status, connector } = useAccount();
   const { connect } = useConnect();
@@ -15,57 +15,48 @@ export function ConnectButton({ wheelPoints = 0 }: { wheelPoints?: number }) {
   const isConnected = status === "connected" && !!address;
   const isAGW = connector?.id === "abstract";
 
-  const formattedBalance = balance
+  const eth = balance
     ? parseFloat(formatUnits(balance.value, balance.decimals)).toFixed(3)
     : "0.000";
 
-  const shortAddr = (addr: string) =>
-    `${addr.slice(0, 5)}...${addr.slice(-3)}`;
+  const short = (a: string) => `${a.slice(0,5)}...${a.slice(-3)}`;
 
   if (isConnected && address) {
     return (
-      <div className="wallet-connected" style={{
-        display: "flex", alignItems: "center",
-        gap: "6px", flexWrap: "nowrap",
-      }}>
-        {/* Compact single info pill on mobile, split on desktop */}
-        <div className="wallet-desktop" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <div style={{
-            background: "#0f5422", border: "1px solid #44FF44",
-            color: "#44FF44", padding: "5px 8px", fontSize: "11px",
-            fontFamily: "'Press Start 2P', monospace", whiteSpace: "nowrap",
-          }}>
-            {formattedBalance} ETH
-          </div>
-          <div style={{
-            background: "#0d4a1e", border: "1px solid #44FF44",
-            color: "#44FF44", padding: "5px 8px", fontSize: "11px",
-            fontFamily: "'Press Start 2P', monospace", whiteSpace: "nowrap",
-          }}>
-            {shortAddr(address)}
-          </div>
-        </div>
-
-        {/* Mobile: compact single pill */}
-        <div className="wallet-mobile" style={{
-          background: "#0d4a1e", border: "1px solid #44FF44",
-          color: "#44FF44", padding: "4px 7px", fontSize: "9px",
-          fontFamily: "'Press Start 2P', monospace",
-          display: "none", flexDirection: "column", gap: "2px",
-          lineHeight: 1.4,
+      <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+        {/* Desktop: two separate badges */}
+        <div className="wallet-desktop" style={{
+          display:"flex", alignItems:"center", gap:5,
         }}>
-          <span>{shortAddr(address)}</span>
-          <span style={{ color: "#9de8b4", fontSize: "8px" }}>{formattedBalance} ETH</span>
+          <div style={{
+            background:"#0f5422", border:"1px solid #44FF44",
+            color:"#44FF44", padding:"4px 7px", fontSize:10,
+            fontFamily:"'Press Start 2P',monospace", whiteSpace:"nowrap",
+          }}>{eth} ETH</div>
+          <div style={{
+            background:"#0d4a1e", border:"1px solid #44FF44",
+            color:"#44FF44", padding:"4px 7px", fontSize:10,
+            fontFamily:"'Press Start 2P',monospace", whiteSpace:"nowrap",
+          }}>{short(address)}</div>
         </div>
 
+        {/* Mobile: one tiny pill */}
+        <div className="wallet-mobile" style={{
+          background:"#0d4a1e", border:"1px solid #44FF44",
+          color:"#44FF44", padding:"3px 6px", fontSize:8,
+          fontFamily:"'Press Start 2P',monospace", whiteSpace:"nowrap",
+          display:"none",
+        }}>{short(address)}</div>
+
+        {/* Disconnect */}
         <button
           onClick={() => { disconnect(); if (isAGW) logout(); }}
           style={{
-            height: "30px", width: "30px",
-            background: "#2a0808", border: "1px solid #FF4444",
-            color: "#FF4444", cursor: "pointer", fontSize: "12px",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
+            height:28, width:28, flexShrink:0,
+            background:"#2a0808", border:"1px solid #FF4444",
+            color:"#FF4444", cursor:"pointer", fontSize:12,
+            display:"flex", alignItems:"center", justifyContent:"center",
+            outline:"none",
           }}
         >✕</button>
       </div>
@@ -76,11 +67,11 @@ export function ConnectButton({ wheelPoints = 0 }: { wheelPoints?: number }) {
     <button
       onClick={() => connect({ connector: abstractWalletConnector() })}
       style={{
-        background: "#0d4a1e", border: "2px solid #1BF26A",
-        color: "#1BF26A", padding: "8px 14px",
-        cursor: "pointer", fontSize: "11px",
-        fontFamily: "'Press Start 2P', monospace",
-        whiteSpace: "nowrap", outline: "none", letterSpacing: "1px",
+        background:"#0d4a1e", border:"2px solid #1BF26A",
+        color:"#1BF26A", padding:"7px 12px",
+        cursor:"pointer", fontSize:"clamp(8px,2vw,10px)",
+        fontFamily:"'Press Start 2P',monospace",
+        whiteSpace:"nowrap", outline:"none",
       }}
     >
       CONNECT AGW
