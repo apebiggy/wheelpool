@@ -381,7 +381,7 @@ function PoolCard({pool,msLeft,myTickets,onMint,onDraw,ethPrice=3000}){
   const soon=msLeft<3600000,urgent=msLeft<300000;
   const mc=myTickets.length;
   const myOdds=mc>0?Math.min(99,(mc/pool.entries*100)).toFixed(1):null;
-  return(<div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{flex:"1 1 280px",minWidth:275,maxWidth:360,background:`linear-gradient(160deg,${pool.darkBg},#1a6830)`,border:`2px solid ${hov?pool.color+"99":"#2a9444"}`,transition:"border-color .25s,transform .2s",transform:hov?"translateY(-5px)":"none",padding:"24px",position:"relative",overflow:"hidden"}}>
+  return(<div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{flex:"1 1 0",minWidth:0,maxWidth:360,background:`linear-gradient(160deg,${pool.darkBg},#1a6830)`,border:`2px solid ${hov?pool.color+"99":"#2a9444"}`,transition:"border-color .25s,transform .2s",transform:hov?"translateY(-5px)":"none",padding:"24px",position:"relative",overflow:"hidden"}}>
     {hov&&<div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse at 50% 0%,${pool.glow} 0%,transparent 65%)`,opacity:.3,pointerEvents:"none"}}/>}
 
     {/* ── Big price badge ── */}
@@ -397,7 +397,7 @@ function PoolCard({pool,msLeft,myTickets,onMint,onDraw,ethPrice=3000}){
     <div style={{marginBottom:14,marginTop:60}}>
       <div style={{fontSize:"clamp(10px,2vw,12px)",color:"#9de8b4",letterSpacing:2,marginBottom:2}}>{pool.label}</div>
       <div style={{
-        color:pool.color,fontSize:"clamp(22px,4vw,30px)",
+        color:pool.color,fontSize:"clamp(18px,3vw,26px)",
         fontFamily:"'VT323',monospace",lineHeight:1,marginBottom:2,
       }}>${Math.round(parseFloat(pool.poolEth||"0")*ethPrice).toLocaleString()} POOL</div>
       <div style={{fontSize:"clamp(8px,1.4vw,10px)",color:"#9de8b4",fontFamily:"'VT323',monospace"}}>entry {pool.entryEth} ETH (~${pool.entryUsd})</div>
@@ -1224,7 +1224,7 @@ export default function WheelPool(){
             {(()=>{
               const period=POOL_PERIODS.find(p=>p.pid===selectedPeriod)||POOL_PERIODS[0];
               return(
-                <div style={{display:"flex",gap:12,overflowX:"auto",paddingBottom:8,alignItems:"stretch",flexWrap:"nowrap"}}>
+                <div className="pool-cards-row" style={{display:"flex",gap:12,paddingBottom:8,alignItems:"stretch",flexWrap:"nowrap",minWidth:0}}>
                   {POOL_STAKES.map(stake=>{
                     const liveEth=(stake.entryUsd/ethPrice).toFixed(6);
                     const livePool=(parseFloat(liveEth)*stake.entries).toFixed(4);

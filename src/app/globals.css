@@ -118,3 +118,21 @@ button, a, [role="button"] { outline: none; }
     font-size: 10px !important;
   }
 }
+
+/* ── Pool cards: fit 4 on desktop, scroll on mobile ─── */
+.pool-cards-row {
+  display: flex !important;
+  gap: 12px;
+  align-items: stretch;
+  flex-wrap: nowrap;
+}
+@media (max-width: 700px) {
+  .pool-cards-row {
+    overflow-x: auto !important;
+    padding-bottom: 8px;
+  }
+  .pool-cards-row > div {
+    min-width: 260px !important;
+    flex: 0 0 260px !important;
+  }
+}
