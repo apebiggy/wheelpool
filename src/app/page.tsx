@@ -281,12 +281,16 @@ function DrawTheater({onClose,onPointsEarned,activePerks}){
 
 function MintModal({pool,onClose,onMinted}){
   const[step,setStep]=useState("confirm");
+  const[qty,setQty]=useState(1);
+  const maxQty=10;
+  const totalEth=(parseFloat(pool.entryEth||"0")*qty).toFixed(6);
+  const totalUsd=(pool.entryUsd*qty).toFixed(0);
 
   const go=()=>{
     setStep("minting");
     setTimeout(()=>{
-      const t=mintTicket(pool.id);
-      onMinted(t);
+      const tickets=Array.from({length:qty},()=>mintTicket(pool.id));
+      tickets.forEach(t=>onMinted(t));
       setStep("done");
     },1200);
   };
@@ -312,11 +316,26 @@ function MintModal({pool,onClose,onMinted}){
                 <div style={{color:"#9de8b4",fontSize:9}}>{pool.label}</div>
               </div>
             </div>
+            {/* Qty selector */}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,paddingBottom:12,borderBottom:`1px solid ${pool.color}22`}}>
+              <span style={{color:"#9de8b4",fontSize:9,fontFamily:"'Press Start 2P',monospace"}}>QUANTITY</span>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <button onClick={()=>setQty(q=>Math.max(1,q-1))} style={{
+                  width:30,height:30,background:"#0a2010",color:pool.color,
+                  border:`1px solid ${pool.color}`,cursor:"pointer",fontSize:16,outline:"none",
+                }}>−</button>
+                <span style={{color:pool.color,fontSize:22,fontFamily:"'VT323',monospace",minWidth:24,textAlign:"center"}}>{qty}</span>
+                <button onClick={()=>setQty(q=>Math.min(maxQty,q+1))} style={{
+                  width:30,height:30,background:"#0a2010",color:pool.color,
+                  border:`1px solid ${pool.color}`,cursor:"pointer",fontSize:16,outline:"none",
+                }}>+</button>
+              </div>
+            </div>
+
             {[
-              ["ENTRY FEE",`${pool.entryEth} ETH (~$${pool.entryUsd})`,pool.color],
+              ["ENTRY FEE",`${pool.entryEth} ETH × ${qty} = ${totalEth} ETH`,pool.color],
+              ["TOTAL COST",`~$${totalUsd}`,"#FFDD00"],
               ["JACKPOT (50%)",`${(parseFloat(pool.poolEth)*0.45).toFixed(5)} ETH`,"#FFD700"],
-              ["2ND PRIZE (25%)",`${(parseFloat(pool.poolEth)*0.225).toFixed(5)} ETH`,"#C0C0C0"],
-              ["3RD PRIZE (15%)",`${(parseFloat(pool.poolEth)*0.135).toFixed(5)} ETH`,"#CD7F32"],
               ["IN POOL NOW",`${pool.entries} entries`,"#9de8b4"],
               ["MIN TO DRAW","3 unique wallets","#9de8b4"],
             ].map(([l,v,c])=>(
@@ -333,7 +352,7 @@ function MintModal({pool,onClose,onMinted}){
 
           <div style={{display:"flex",gap:8}}>
             <button onClick={go} style={{flex:1,padding:13,background:"#1a6a28",color:"#fff",border:"none",cursor:"pointer",fontSize:11,borderBottom:`3px solid ${pool.color}`,outline:"none"}}>
-              ENTER POOL →
+              ENTER {qty > 1 ? `${qty} TICKETS` : "POOL"} → ${totalUsd}
             </button>
             <button onClick={onClose} style={{flex:1,padding:13,background:"#1a0808",color:"#888",border:"none",cursor:"pointer",fontSize:11,borderBottom:"3px solid #FF4444",outline:"none"}}>
               CANCEL
@@ -966,7 +985,7 @@ function WheelMarketplace({points,activePerks,onSpend,onActivate,pools,ethPrice,
 
               <div style={{fontSize:28,marginBottom:10}}>{perk.icon}</div>
               <div style={{color:perk.color,fontSize:11,fontFamily:"'Press Start 2P',monospace",marginBottom:6,lineHeight:1.5}}>{perk.name}</div>
-              <div style={{color:"#9de8b4",fontSize:10,fontFamily:"'VT323',monospace",marginBottom:14,lineHeight:1.5}}>{perk.desc}</div>
+              <div style={{color:"#9de8b4",fontSize:14,fontFamily:"'VT323',monospace",marginBottom:14,lineHeight:1.5}}>{perk.desc}</div>
 
               {/* Cost */}
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
