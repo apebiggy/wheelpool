@@ -165,3 +165,44 @@ button, a, [role="button"] { outline: none; }
     top: 80% !important;
   }
 }
+
+/* ── Header mobile fixes ────────────────────── */
+@media (max-width: 600px) {
+  /* Logo always full width centered */
+  .header-logo {
+    order: 0 !important;
+    width: 100% !important;
+    justify-content: center !important;
+    font-size: 24px !important;
+    padding: 6px 0 2px !important;
+  }
+  /* Wallet row below logo, centered */
+  .header-wallet {
+    order: 1 !important;
+    width: 100% !important;
+    justify-content: center !important;
+    padding-bottom: 6px !important;
+  }
+  /* Stack header rows */
+  .header-row1 {
+    flex-direction: column !important;
+    align-items: center !important;
+    padding: 4px 12px !important;
+    gap: 4px !important;
+  }
+  /* Hero wheel lower */
+  .hero-wheel {
+    top: 56% !important;
+  }
+  /* Ensure hero image tall enough */
+  .hero-img {
+    max-height: 680px !important;
+    min-height: 580px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .hero-wheel {
+    top: 60% !important;
+  }
+}

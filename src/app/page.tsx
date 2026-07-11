@@ -1128,9 +1128,8 @@ export default function WheelPool(){
       {/* Row 1: 3-column — left empty/spacer | center: logo | right: eth + wallet + X */}
       <div style={{display:"flex",alignItems:"center",padding:"10px 14px",gap:6}}>
 
-        <div className="header-logo" onClick={()=>setNav("home")} style={{flex:"1 1 auto",display:"flex",justifyContent:"center",alignItems:"center",cursor:"pointer",fontSize:"clamp(18px,3.8vw,40px)",letterSpacing:2,lineHeight:1.2,whiteSpace:"nowrap",order:1}}>
-          <span style={{color:"#FFDD00"}}>Wheel</span>
-          <span style={{color:"#44FF44"}}>Pool</span>
+        <div className="header-logo" onClick={()=>setNav("home")} style={{flex:"1 1 auto",display:"flex",justifyContent:"center",alignItems:"center",cursor:"pointer",fontSize:"clamp(20px,4vw,40px)",letterSpacing:2,lineHeight:1.2,whiteSpace:"nowrap",order:1,textAlign:"center"}}>
+          <span style={{color:"#FFDD00"}}>Wheel</span><span style={{color:"#44FF44"}}>Pool</span>
         </div>
 
                 <div className="header-wallet" style={{flex:"0 0 auto",display:"flex",alignItems:"center",gap:6,justifyContent:"flex-end",order:2}}>
@@ -1171,14 +1170,14 @@ export default function WheelPool(){
       {/* ═══ HERO — image bg + interactive wheel overlay ═══ */}
       <section style={{position:"relative",overflow:"visible",paddingBottom:"clamp(32px,8vw,48px)",paddingTop:"88px",marginTop:"-88px"}}>
         {/* background image */}
-        <img src={HERO} alt="WheelPool" style={{width:"100%",display:"block",maxHeight:560,objectFit:"cover",objectPosition:"center top"}}/>
+        <img src={HERO} alt="WheelPool" className="hero-img" style={{width:"100%",display:"block",maxHeight:560,objectFit:"cover",objectPosition:"center top"}}/>
 
         {/* dark gradient so text/wheel are readable */}
         <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(0,0,0,.0) 0%,rgba(0,0,0,.05) 50%,rgba(10,60,10,.92) 100%)"}}/>
         
 
         {/* interactive wheel — smaller, sits over image wheel, WheelPool banner stays visible */}
-        <div className="hero-wheel" style={{position:"absolute",top:"68%",left:"50%",transform:"translate(-50%, -50%)",zIndex:3}}>
+        <div className="hero-wheel" style={{position:"absolute",top:"52%",left:"50%",transform:"translate(-50%, -50%)",zIndex:3}}>
           <InteractiveWheel size={wheelSize}/>
         </div>
       </section>
@@ -1189,7 +1188,7 @@ export default function WheelPool(){
           WIN ETH ON <span style={{color:"#1BF26A",textShadow:"0 0 20px #1BF26A"}}>ABSTRACT CHAIN</span>
         </div>
         <div style={{color:"#c0f0d0",fontSize:"clamp(16px,4vw,20px)",marginBottom:24,fontFamily:"'Press Start 2P',monospace"}}>
-          Mint NFT tickets · Auto draw · Instant payouts · Zero gas for winners
+          Deposit · Auto draw · Instant payouts · Winners paid on-chain
         </div>
         <div style={{display:"flex",justifyContent:"center",gap:12,flexWrap:"wrap"}}>
           <button onClick={()=>typeof document!=="undefined"&&document.getElementById("pools")?.scrollIntoView({behavior:"smooth"})}
