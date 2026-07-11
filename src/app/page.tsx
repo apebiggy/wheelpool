@@ -769,19 +769,45 @@ function MyProfile({tickets,wheelPoints,activePerks,addPoints,ethPrice,onMint,on
         {activeTickets.length===0?(
           <div style={{background:"#0a2a0a",border:"1px dashed #2a5a2a",padding:"24px",textAlign:"center"}}>
             <div style={{color:"#6aaa6a",fontSize:9,fontFamily:"'Press Start 2P',monospace",lineHeight:2}}>No active entries yet</div>
-            <button onClick={()=>{}} style={{marginTop:12,background:"#1a5414",color:"#1BF26A",border:"1px solid #1BF26A",padding:"8px 16px",cursor:"pointer",fontSize:9,fontFamily:"'Press Start 2P',monospace",outline:"none"}}>
-              GO TO POOLS →
-            </button>
           </div>
         ):(
-          <div style={{display:"flex",gap:10,overflowX:"auto",paddingBottom:8}}>
-            {activeTickets.map(t=>{
-              const pid=t.poolId?.split("-")[0]||"h1";
-              const period=POOL_PERIODS.find(p=>p.pid===pid)||POOL_PERIODS[0];
-              const stake=POOL_STAKES.find(s=>s.entryUsd===parseInt(t.poolId?.split("-")[1]))||POOL_STAKES[0];
-              const liveEth=(stake.entryUsd/ethPrice).toFixed(5);
-              const pool={...period,...stake,id:t.poolId,entryEth:liveEth,poolEth:(parseFloat(liveEth)*stake.entries).toFixed(4),glow:period.color+"44",offsetMin:0};
-              return <TicketCard key={t.id} ticket={t} pool={pool}/>;
+          <div style={{display:"flex",flexDirection:"column",gap:20}}>
+            {[
+              {pid:"h1",label:"HOURLY",  icon:"🎡",color:"#FF6633"},
+              {pid:"d1",label:"DAILY",   icon:"⚡",color:"#FFDD00"},
+              {pid:"w1",label:"WEEKLY",  icon:"👑",color:"#AA44FF"},
+            ].map(period=>{
+              const periodTickets=activeTickets.filter(t=>t.poolId?.startsWith(period.pid+"-"));
+              if(periodTickets.length===0)return null;
+              const totalMyTickets=periodTickets.length;
+              const avgEntries=Math.round(periodTickets.reduce((a,t)=>{
+                const s=POOL_STAKES.find(s=>s.entryUsd===parseInt(t.poolId?.split("-")[1]));
+                return a+(s?.entries||47);
+              },0)/totalMyTickets);
+              const myOdds=Math.min(99,(totalMyTickets/avgEntries*100)).toFixed(1);
+              return(
+                <div key={period.pid}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{fontSize:14}}>{period.icon}</span>
+                      <span style={{color:period.color,fontSize:11,fontFamily:"'Press Start 2P',monospace"}}>{period.label}</span>
+                    </div>
+                    <span style={{color:period.color,fontSize:11,fontFamily:"'VT323',monospace"}}>
+                      🎟 {totalMyTickets} ticket{totalMyTickets>1?"s":""} · ~{myOdds}% chance per slot
+                    </span>
+                  </div>
+                  <div style={{display:"flex",gap:10,overflowX:"auto",paddingBottom:6}}>
+                    {periodTickets.map(t=>{
+                      const pid=t.poolId?.split("-")[0]||"h1";
+                      const per=POOL_PERIODS.find(p=>p.pid===pid)||POOL_PERIODS[0];
+                      const stake=POOL_STAKES.find(s=>s.entryUsd===parseInt(t.poolId?.split("-")[1]))||POOL_STAKES[0];
+                      const liveEth=(stake.entryUsd/ethPrice).toFixed(5);
+                      const pool={...per,...stake,id:t.poolId,entryEth:liveEth,poolEth:(parseFloat(liveEth)*stake.entries).toFixed(4),glow:per.color+"44",offsetMin:0};
+                      return <TicketCard key={t.id} ticket={t} pool={pool}/>;
+                    })}
+                  </div>
+                </div>
+              );
             })}
           </div>
         )}
