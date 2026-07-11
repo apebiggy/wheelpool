@@ -1290,7 +1290,7 @@ export default function WheelPool(){
     </section>}
     {nav==="how"&&<section style={{padding:"48px 20px",paddingTop:"108px",background:"#0d4a1e"}}>
       <div style={{maxWidth:900,margin:"0 auto"}}>
-        <h2 style={{textAlign:"center",fontSize:"clamp(24px,6vw,34px)",color:"#FFDD00",letterSpacing:2,marginBottom:36}}>📖 HOW IT WORKS</h2>
+        <h2 style={{textAlign:"center",fontSize:"clamp(24px,6vw,34px)",color:"#FFDD00",letterSpacing:2,marginBottom:48}}>📖 HOW IT WORKS</h2>
 
         {/* 6-card grid */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:14,marginBottom:36}}>
