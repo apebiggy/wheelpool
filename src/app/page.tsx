@@ -1151,7 +1151,7 @@ export default function WheelPool(){
         borderTop:"1px solid rgba(27,242,106,.22)",
         background:"rgba(8,50,8,.6)",
       }}>
-        {[["home","🎡 POOLS"],["tickets","👤 PROFILE"],["market","🏪 MARKET"],["how","📖 HOW"]].map(([k,l])=>(
+        {[["home","🎡","POOLS"],["tickets","👤","PROFILE"],["market","🏪","MARKET"],["how","📖","HOW"]].map(([k,emoji,label])=>(
           <button key={k} onClick={()=>setNav(k)} className="nav-item" style={{
             flex:1,
             background:"none",border:"none",cursor:"pointer",
