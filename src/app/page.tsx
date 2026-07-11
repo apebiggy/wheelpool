@@ -381,7 +381,7 @@ function PoolCard({pool,msLeft,myTickets,onMint,onDraw,ethPrice=3000}){
   const soon=msLeft<3600000,urgent=msLeft<300000;
   const mc=myTickets.length;
   const myOdds=mc>0?Math.min(99,(mc/pool.entries*100)).toFixed(1):null;
-  return(<div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{flex:"1 1 220px",minWidth:220,maxWidth:300,background:`linear-gradient(160deg,${pool.darkBg},#1a6830)`,border:`2px solid ${hov?pool.color+"99":"#2a9444"}`,transition:"border-color .25s,transform .2s",transform:hov?"translateY(-5px)":"none",padding:"24px",position:"relative",overflow:"hidden"}}>
+  return(<div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{flex:"1 1 260px",minWidth:255,maxWidth:340,background:`linear-gradient(160deg,${pool.darkBg},#1a6830)`,border:`2px solid ${hov?pool.color+"99":"#2a9444"}`,transition:"border-color .25s,transform .2s",transform:hov?"translateY(-5px)":"none",padding:"24px",position:"relative",overflow:"hidden"}}>
     {hov&&<div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse at 50% 0%,${pool.glow} 0%,transparent 65%)`,opacity:.3,pointerEvents:"none"}}/>}
 
     {/* ── Big price badge ── */}
@@ -1155,13 +1155,9 @@ export default function WheelPool(){
 
       {/* how it works — 3 steps */}
       <div style={{background:"#0f5422",borderBottom:"2px solid #3a7a22",padding:"28px 20px"}}>
-        <div style={{maxWidth:860,margin:"0 auto",display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(220px,80vw),1fr))",gap:20}}>
-          {[["🎟","BUY TICKETS","4 pools: $2 · $5 · $10 · $25. 1 ticket = 1 entry. More tickets = better odds."],
-            ["🎰","4 POOLS, 3 PRIZES","Draws every 1H · 6H · 12H · 24H. 3 independent winners per draw. Buy more tickets for more chances."],
-            ["💰","PRIZES STACK","🥇 50% · 🥈 25% · 🥉 15% · 10% ops. Win multiple slots? All prizes paid in full."],
-          ].map(([ic,t,d])=>(
-            <div key={t} style={{textAlign:"center",padding:"24px 12px"}}>
-              <div style={{fontSize:"clamp(60px,14vw,84px)",marginBottom:24,lineHeight:1}}>{ic}</div>
+        <div style={{maxWidth:860,margin:"0 auto",display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:16}}>
+          {[["🎟 MINT","Buy a ticket to enter. Each ticket = one draw entry."],["🎡 DRAW","Draw runs automatically at scheduled time. VRF selects 3 winners."],["💸 WIN","Winners receive ETH instantly on-chain. Non-winners earn WHEEL points."]].map(([t,d])=>(
+            <div key={t} style={{background:"#145414",border:"1px solid #3a7a22",padding:"16px"}}>
               <div style={{color:"#FFDD00",fontSize:"clamp(12px,3vw,16px)",marginBottom:12,letterSpacing:1}}>{t}</div>
               <div style={{color:"#c0f0d0",fontSize:"clamp(11px,2.2vw,14px)",lineHeight:2.2}}>{d}</div>
             </div>
@@ -1178,7 +1174,7 @@ export default function WheelPool(){
       <section id="pools" style={{padding:"48px 20px",background:"linear-gradient(180deg,#145414,#0d4a1e)"}}>
         <div style={{maxWidth:1060,margin:"0 auto"}}>
           <h2 style={{textAlign:"center",fontSize:"clamp(24px,6vw,34px)",color:"#FFDD00",textShadow:"3px 3px 0 #000",letterSpacing:2,marginBottom:8}}>🎰 CHOOSE A POOL</h2>
-          <div style={{textAlign:"center",color:"#c0f0d0",fontSize:"clamp(16px,4vw,20px)",marginBottom:28}}>Draws every 1H · 6H · 24H &nbsp;·&nbsp; More tickets = better odds &nbsp;·&nbsp; One ticket can win multiple prizes</div>
+          
           <div style={{display:"flex",flexDirection:"column",gap:0}}>
 
             {/* ── Flashy period selector ── */}
