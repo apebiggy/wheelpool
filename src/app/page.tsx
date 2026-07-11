@@ -1034,6 +1034,7 @@ export default function WheelPool(){
   const[priceLoading,setPriceLoading]=useState(false);
   const[mounted,setMounted]=useState(false);
   useEffect(()=>setMounted(true),[]);
+  const[selectedPeriod,setSelectedPeriod]=useState("h1");
   const[wheelPoints,setWheelPoints]=useState(0);
   const[activePerks,setActivePerks]=useState([]);
   const addPoints=(pts)=>setWheelPoints(p=>p+pts);
@@ -1174,8 +1175,85 @@ export default function WheelPool(){
         <div style={{maxWidth:1060,margin:"0 auto"}}>
           <h2 style={{textAlign:"center",fontSize:"clamp(24px,6vw,34px)",color:"#FFDD00",textShadow:"3px 3px 0 #000",letterSpacing:2,marginBottom:8}}>🎰 CHOOSE A POOL</h2>
           <div style={{textAlign:"center",color:"#c0f0d0",fontSize:"clamp(16px,4vw,20px)",marginBottom:28}}>Draws every 1H · 6H · 24H &nbsp;·&nbsp; More tickets = better odds &nbsp;·&nbsp; One ticket can win multiple prizes</div>
-          <div>
-            <TicketSections tickets={tickets} ethPrice={ethPrice} onMint={p=>setMintPool(p)} onDraw={p=>setDrawPool(p)} msLeft={ms} fmtMs={fmtMs}/>
+          <div style={{display:"flex",flexDirection:"column",gap:0}}>
+
+            {/* ── Flashy period selector ── */}
+            <div style={{
+              display:"flex",gap:0,marginBottom:24,
+              background:"#0a2010",
+              border:"2px solid #1BF26A33",
+              alignSelf:"center",
+              overflow:"hidden",
+            }}>
+              {[
+                {id:"h1", label:"HOURLY",  icon:"🎡", intervalH:1},
+                {id:"d1", label:"DAILY",   icon:"⚡", intervalH:24},
+                {id:"w1", label:"WEEKLY",  icon:"👑", intervalH:168},
+              ].map((p,i)=>{
+                const active=selectedPeriod===p.id;
+                const pp=POOL_PERIODS.find(x=>x.pid===p.id)||POOL_PERIODS[0];
+                return(
+                  <button key={p.id} onClick={()=>setSelectedPeriod(p.id)} style={{
+                    padding:"12px 20px",
+                    background:active?`linear-gradient(135deg,${pp.color}33,${pp.color}11)`:"transparent",
+                    color:active?pp.color:"#6aaa6a",
+                    border:"none",
+                    borderRight:i<2?"1px solid #1BF26A22":"none",
+                    borderBottom:active?`2px solid ${pp.color}`:"2px solid transparent",
+                    cursor:"pointer",
+                    fontSize:"clamp(8px,1.8vw,10px)",
+                    fontFamily:"'Press Start 2P',monospace",
+                    outline:"none",
+                    letterSpacing:1,
+                    whiteSpace:"nowrap",
+                    transition:"all .2s",
+                    boxShadow:active?`inset 0 -1px 0 ${pp.color}44`:"none",
+                  }}>
+                    {p.icon} {p.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* ── 4 fancy pool cards for selected period ── */}
+            {(()=>{
+              const period=POOL_PERIODS.find(p=>p.pid===selectedPeriod)||POOL_PERIODS[0];
+              return(
+                <div style={{display:"flex",gap:12,overflowX:"auto",paddingBottom:8,alignItems:"stretch"}}>
+                  {POOL_STAKES.map(stake=>{
+                    const liveEth=(stake.entryUsd/ethPrice).toFixed(6);
+                    const livePool=(parseFloat(liveEth)*stake.entries).toFixed(4);
+                    const pool={
+                      id:`${period.pid}-${stake.entryUsd}`,
+                      name:`${period.name} $${stake.entryUsd}`,
+                      icon:period.icon,
+                      intervalH:period.intervalH,
+                      label:period.label,
+                      color:period.color,
+                      darkBg:period.darkBg,
+                      accent:period.accent,
+                      glow:period.glow,
+                      entryUsd:stake.entryUsd,
+                      entryEth:liveEth,
+                      poolEth:livePool,
+                      jackpot:(parseFloat(livePool)*0.45).toFixed(5),
+                      entries:stake.entries,
+                      offsetMin:0,
+                    };
+                    return(
+                      <PoolCard
+                        key={pool.id}
+                        pool={pool}
+                        msLeft={ms(pool)}
+                        myTickets={myT(pool.id)}
+                        onMint={()=>setMintPool(pool)}
+                        onDraw={()=>setDrawPool(pool)}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </section>
