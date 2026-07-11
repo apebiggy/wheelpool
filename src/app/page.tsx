@@ -381,7 +381,7 @@ function PoolCard({pool,msLeft,myTickets,onMint,onDraw,ethPrice=3000}){
   const soon=msLeft<3600000,urgent=msLeft<300000;
   const mc=myTickets.length;
   const myOdds=mc>0?Math.min(99,(mc/pool.entries*100)).toFixed(1):null;
-  return(<div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{flex:"1 1 260px",minWidth:255,maxWidth:340,background:`linear-gradient(160deg,${pool.darkBg},#1a6830)`,border:`2px solid ${hov?pool.color+"99":"#2a9444"}`,transition:"border-color .25s,transform .2s",transform:hov?"translateY(-5px)":"none",padding:"24px",position:"relative",overflow:"hidden"}}>
+  return(<div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{flex:"1 1 280px",minWidth:275,maxWidth:360,background:`linear-gradient(160deg,${pool.darkBg},#1a6830)`,border:`2px solid ${hov?pool.color+"99":"#2a9444"}`,transition:"border-color .25s,transform .2s",transform:hov?"translateY(-5px)":"none",padding:"24px",position:"relative",overflow:"hidden"}}>
     {hov&&<div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse at 50% 0%,${pool.glow} 0%,transparent 65%)`,opacity:.3,pointerEvents:"none"}}/>}
 
     {/* ── Big price badge ── */}
@@ -407,7 +407,12 @@ function PoolCard({pool,msLeft,myTickets,onMint,onDraw,ethPrice=3000}){
       <div style={{fontSize:"clamp(22px,6vw,30px)",letterSpacing:4,fontFamily:"'VT323',monospace",color:urgent?"#FF4444":soon?"#FFDD00":pool.color,animation:urgent?"blinkAnim .7s infinite":"none"}}>{fmtMs(msLeft)}</div>
     </div>
     <div style={{marginBottom:16,display:"flex",flexDirection:"column",gap:7}}>
-      {[["IN POOL",`${pool.entries} tickets`,"#9de8b4"],["JACKPOT 🥇",`${pool.jackpot} ETH`,pool.accent]].map(([l,v,c])=>(<div key={l} style={{display:"flex",justifyContent:"space-between"}}><span style={{color:"#c0f0d0",fontSize:"clamp(11px,2.2vw,14px)"}}> {l}</span><span style={{color:c,fontSize:11}}>{v}</span></div>))}
+      {[["IN POOL",`${pool.entries} tickets`],["JACKPOT",`${pool.jackpot} ETH`]].map(([l,v])=>(
+        <div key={l} style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",padding:"4px 0",borderBottom:"1px solid #2a5a2a22"}}>
+          <span style={{color:"#9de8b4",fontSize:9,fontFamily:"'Press Start 2P',monospace",flexShrink:0}}>{l}</span>
+          <span style={{color:"#FFDD00",fontSize:14,fontFamily:"'VT323',monospace"}}>{v}</span>
+        </div>
+      ))}
     </div>
     {/* minimum ticket progress bar */}
     <div style={{marginBottom:12}}>
