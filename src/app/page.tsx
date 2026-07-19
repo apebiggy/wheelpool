@@ -98,7 +98,7 @@ function mintTicket(pid){return{id:`WP-${pid.toUpperCase()}-${String(_tc++).padS
 function stackR(results){const m={};results.forEach(r=>{const id=r.ticket.id;if(!m[id])m[id]={ticket:r.ticket,prizes:[],totalEth:0};m[id].prizes.push(r);m[id].totalEth+=parseFloat(r.ethWon);});return Object.values(m).sort((a,b)=>b.prizes.length-a.prizes.length||b.totalEth-a.totalEth);}
 function genDemo(pid){return[...Array(13).fill("Common"),...Array(8).fill("Uncommon"),...Array(5).fill("Rare"),...Array(3).fill("Epic"),...Array(1).fill("Legendary")].map((rn,i)=>{const rarity=RARITIES.find(r=>r.name===rn)||RARITIES[0];return{id:`DEMO-${pid.toUpperCase()}-${String(i+1).padStart(3,"0")}`,poolId:pid,rarity,skin:SKINS[i%6],hat:HATS[i%6],acc:ACCS[i%6],status:"LIVE",addr:`0x${(0xA000+i).toString(16)}...${(0xB000+i).toString(16)}`};});}
 function getNextSpin(ih,om){const n=Date.now(),im=ih*3600000,o2=om*60000,dm=86400000,b=Math.floor(n/dm)*dm;for(let i=0;i<=Math.ceil(24/ih)+2;i++){const t=b+i*im+o2;if(t>n+500)return t;}return b+dm+o2;}
-function fmtMs(ms){if(ms<=0)return"00:00:00";const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000),s=Math.floor((ms%60000)/1000);return`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;}
+function fmtMs(ms){if(ms<=0)return"00:00:00";const d=Math.floor(ms/86400000),h=Math.floor((ms%86400000)/3600000),m=Math.floor((ms%3600000)/60000),s=Math.floor((ms%60000)/1000);const t=`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;return d>0?`${d}d ${t}`:t;}
 
 /* ══════════════════════════════════════════════
    INTERACTIVE WHEEL — replaces the static image wheel
@@ -761,9 +761,6 @@ function MyProfile({tickets,wheelPoints,activePerks,addPoints,ethPrice,onMint,on
   return(
     <div style={{display:"flex",flexDirection:"column",gap:28}}>
 
-      {/* ── WALLET CONNECTION ─────────────────── */}
-      <WalletSection onClose={()=>{}}/>
-
       {/* ── PROFILE HEADER ────────────────────── */}
       <div style={{
         background:"linear-gradient(135deg,#0a2a0a,#1a4a1a,#0a3a14)",
@@ -1391,7 +1388,12 @@ export default function WheelPool(){
   const[ethPrice,setEthPrice]=useState(3000);
   const[priceLoading,setPriceLoading]=useState(false);
   const[mounted,setMounted]=useState(false);
-  useEffect(()=>setMounted(true),[]);
+  const[splash,setSplash]=useState(true);
+  useEffect(()=>{
+    setMounted(true);
+    const t=setTimeout(()=>setSplash(false),2800);
+    return()=>clearTimeout(t);
+  },[]);
   const[burgerOpen,setBurgerOpen]=useState(false);
   const[wheelPotBalance,setWheelPotBalance]=useState(0.847); // mock — replace with contract read
   const[selectedPeriod,setSelectedPeriod]=useState("h1");
@@ -1421,7 +1423,25 @@ export default function WheelPool(){
 
   return(<div style={{fontFamily:"'Press Start 2P',monospace",background:"#0d4a1e",color:"#fff",minHeight:"100vh",overflowX:"hidden"}}>
 
-    {/* HEADER — sticky, two-row */}
+    {splash&&<div onClick={()=>setSplash(false)} style={{
+      position:"fixed",inset:0,
+      background:"linear-gradient(135deg,#061406 0%,#0d2a0d 50%,#061406 100%)",
+      zIndex:9999,display:"flex",flexDirection:"column",
+      alignItems:"center",justifyContent:"center",cursor:"pointer",
+    }}>
+      <div style={{fontSize:"clamp(80px,20vw,130px)",animation:"spinAnim 1.2s linear infinite",marginBottom:20,filter:"drop-shadow(0 0 30px rgba(27,242,106,.6))"}}>🎡</div>
+      <div style={{fontSize:"clamp(28px,7vw,52px)",letterSpacing:3,marginBottom:10}}>
+        <span style={{color:"#FFDD00"}}>Wheel</span><span style={{color:"#44FF44"}}>Pool</span>
+      </div>
+      <div style={{color:"#9de8b4",fontSize:"clamp(8px,2vw,12px)",letterSpacing:2,marginBottom:36}}>SPIN. WIN ETH. EVERYONE EARNS.</div>
+      <div style={{width:"clamp(180px,40vw,280px)",height:4,background:"#1a4a1a",overflow:"hidden",borderRadius:2,marginBottom:16}}>
+        <div style={{height:"100%",background:"linear-gradient(90deg,#1BF26A,#FFDD00)",animation:"splashLoad 2.6s linear forwards",borderRadius:2}}/>
+      </div>
+      <div style={{color:"#6aaa6a",fontSize:"clamp(7px,1.5vw,9px)",letterSpacing:1}}>TAP TO SKIP</div>
+      <div style={{position:"absolute",bottom:24,color:"#3a6a3a",fontSize:"clamp(7px,1.5vw,9px)",letterSpacing:2}}>BUILT ON ABSTRACT CHAIN</div>
+    </div>}
+
+    {/* HEADER — sticky, two-row */}}
     <header style={{
       background:"rgba(12,60,24,.98)",
       borderBottom:"3px solid #1BF26A",
@@ -1442,10 +1462,12 @@ export default function WheelPool(){
           <span style={{color:"#FFDD00"}}>Wheel</span><span style={{color:"#44FF44"}}>Pool</span>
         </div>
 
-        {/* Compact wallet — right next to logo */}
-        <CompactWallet/>
-
         <div style={{flex:1}}/>
+
+        {/* Compact wallet — right side, desktop only */}
+        <div className="compact-wallet-desktop">
+          <CompactWallet/>
+        </div>
 
         {/* Burger button */}
         <button onClick={()=>setBurgerOpen(o=>!o)} style={{
