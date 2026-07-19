@@ -212,7 +212,8 @@ export default function DrawTheater({ onClose, onPointsEarned, activePerks }) {
         setAutoFired(true);
         setTimeout(() => {
           if (runDrawRef.current) runDrawRef.current();
-        }, 500);
+          else setTimeout(() => runDrawRef.current && runDrawRef.current(), 500);
+        }, 600);
       }
     }, 500);
     setMsLeft(getNextDraw(selectedPool.intervalH) - Date.now());
@@ -221,8 +222,8 @@ export default function DrawTheater({ onClose, onPointsEarned, activePerks }) {
 
   // auto-fire handled directly in countdown interval via runDrawRef
 
-  // Always keep ref pointing to latest runDraw
-  useEffect(() => { runDrawRef.current = runDraw; }, [runDraw]);
+  // Always keep ref pointing to latest runDraw — assigned on every render (no effect delay)
+  runDrawRef.current = runDraw;
 
   // History with pool name + fake TX hash
   useEffect(() => {
