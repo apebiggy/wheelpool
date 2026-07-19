@@ -1175,9 +1175,9 @@ function CancelModal({modal,tickets,pools,ethPrice,onClose,onConfirm}){
               ["→ WHEELPOT",`${wheelPotEth} ETH`,"#FFD700"],
               ["→ TREASURY",`${treasuryEth} ETH`,"#FF6633"],
             ].map(([l,v,c])=>(
-              <div key={l} style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                <span style={{color:"#6aaa6a",fontSize:8}}>{l}</span>
-                <span style={{color:c,fontSize:9,fontFamily:"'VT323',monospace"}}>{v}</span>
+              <div key={l} style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:8,gap:8}}>
+                <span style={{color:"#6aaa6a",fontSize:9,fontFamily:"'Press Start 2P',monospace",flexShrink:0}}>{l}</span>
+                <span style={{color:c,fontSize:18,fontFamily:"'VT323',monospace",textAlign:"right"}}>{v}</span>
               </div>
             ))}
             <div style={{
