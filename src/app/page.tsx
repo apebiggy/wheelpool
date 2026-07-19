@@ -640,43 +640,38 @@ function TicketSections({tickets,ethPrice,onMint,onDraw,msLeft,fmtMs}){
    COMPACT WALLET — shown inline next to logo
 ══════════════════════════════════════════════ */
 function CompactWallet(){
-  const {login,logout}=useLoginWithAbstract();
-  const {address,status,connector}=useAccount();
-  const {connect}=useConnect();
-  const {disconnect}=useDisconnect();
+  const {address,status}=useAccount();
   const {data:balance}=useBalance({address});
+  const [mounted,setMounted]=useState(false);
+  useEffect(()=>setMounted(true),[]);
   const isConnected=status==="connected"&&!!address;
-  const isAGW=connector?.id==="abstract";
   const eth=balance?parseFloat(formatUnits(balance.value,balance.decimals)).toFixed(3):"0.000";
   const short=a=>`${a.slice(0,5)}...${a.slice(-3)}`;
-
-  if(isConnected&&address){
-    return(
-      <div style={{
-        background:"#0d4a1e",border:"1px solid #44FF4466",
-        color:"#44FF44",padding:"4px 10px",
-        fontSize:"clamp(8px,1.8vw,10px)",
-        fontFamily:"'Press Start 2P',monospace",
-        whiteSpace:"nowrap",lineHeight:1.6,
-      }}>
-        <div>{short(address)}</div>
-        <div style={{color:"#9de8b4",fontSize:"clamp(7px,1.5vw,9px)"}}>{eth} ETH</div>
-      </div>
-    );
-  }
-  return null; // not connected — burger menu shows connect button
+  if(!mounted||!isConnected||!address)return null;
+  return(
+    <div style={{
+      background:"#0d4a1e",border:"1px solid #44FF4466",
+      color:"#44FF44",padding:"4px 10px",
+      fontSize:"clamp(8px,1.8vw,10px)",
+      fontFamily:"'Press Start 2P',monospace",
+      whiteSpace:"nowrap",lineHeight:1.6,
+    }}>
+      <div>{short(address)}</div>
+      <div style={{color:"#9de8b4",fontSize:"clamp(7px,1.5vw,9px)"}}>{eth} ETH</div>
+    </div>
+  );
 }
 
 /* ══════════════════════════════════════════════
    BURGER WALLET — connect/disconnect in burger menu
 ══════════════════════════════════════════════ */
 function BurgerWallet({onClose}){
-  const {login,logout}=useLoginWithAbstract();
-  const {address,status,connector}=useAccount();
+  const {address,status}=useAccount();
   const {connect}=useConnect();
   const {disconnect}=useDisconnect();
-  const isConnected=status==="connected"&&!!address;
-  const isAGW=connector?.id==="abstract";
+  const [mounted,setMounted]=useState(false);
+  useEffect(()=>setMounted(true),[]);
+  const isConnected=mounted&&status==="connected"&&!!address;
   const short=a=>`${a.slice(0,6)}...${a.slice(-4)}`;
 
   if(isConnected&&address){
@@ -686,7 +681,7 @@ function BurgerWallet({onClose}){
           <div style={{color:"#44FF44",fontSize:9,fontFamily:"'Press Start 2P',monospace",marginBottom:3}}>CONNECTED</div>
           <div style={{color:"#9de8b4",fontSize:10,fontFamily:"monospace"}}>{short(address)}</div>
         </div>
-        <button onClick={()=>{disconnect();if(isAGW)logout();onClose();}} style={{
+        <button onClick={()=>{disconnect();onClose();}} style={{
           background:"#2a0808",color:"#FF4444",border:"1px solid #FF4444",
           padding:"7px 12px",cursor:"pointer",fontSize:9,
           fontFamily:"'Press Start 2P',monospace",outline:"none",flexShrink:0,
