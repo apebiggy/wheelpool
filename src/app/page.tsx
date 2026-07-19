@@ -730,6 +730,7 @@ function MyProfile({tickets,wheelPoints,activePerks,addPoints,ethPrice,onMint,on
   const[shared,setShared]=useState(false);
   const[shareFlash,setShareFlash]=useState(false);
   const[claimedAch,setClaimedAch]=useState([]);
+  const[cancelModal,setCancelModal]=useState(null); // {periodId, periodLabel, periodColor, poolLabel}
 
   const level=getLevel(wheelPoints);
   const totalEntries=tickets.length;
@@ -856,14 +857,33 @@ function MyProfile({tickets,wheelPoints,activePerks,addPoints,ethPrice,onMint,on
               const myOdds=Math.min(99,(totalMyTickets/avgEntries*100)).toFixed(1);
               return(
                 <div key={period.pid}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8,flexWrap:"wrap",gap:8}}>
                     <div style={{display:"flex",alignItems:"center",gap:8}}>
                       <span style={{fontSize:14}}>{period.icon}</span>
                       <span style={{color:period.color,fontSize:11,fontFamily:"'Press Start 2P',monospace"}}>{period.label}</span>
+                      <span style={{color:period.color,fontSize:11,fontFamily:"'VT323',monospace"}}>
+                        🎟 {totalMyTickets} ticket{totalMyTickets>1?"s":""}
+                      </span>
                     </div>
-                    <span style={{color:period.color,fontSize:11,fontFamily:"'VT323',monospace"}}>
-                      🎟 {totalMyTickets} ticket{totalMyTickets>1?"s":""} · ~{myOdds}% chance per slot
-                    </span>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{color:"#9de8b4",fontSize:10,fontFamily:"'VT323',monospace"}}>~{myOdds}% chance</span>
+                      <button
+                        onClick={()=>setCancelModal({
+                          periodId:period.pid,
+                          periodLabel:period.label,
+                          periodColor:period.color,
+                          periodIcon:period.icon,
+                        })}
+                        style={{
+                          background:"transparent",color:"#FF6633",
+                          border:"1px solid #FF663366",
+                          padding:"4px 10px",cursor:"pointer",
+                          fontSize:8,fontFamily:"'Press Start 2P',monospace",
+                          outline:"none",
+                        }}>
+                        ✕ CANCEL
+                      </button>
+                    </div>
                   </div>
                   <div style={{display:"flex",gap:10,overflowX:"auto",paddingBottom:6}}>
                     {periodTickets.map(t=>{
@@ -981,6 +1001,221 @@ function MyProfile({tickets,wheelPoints,activePerks,addPoints,ethPrice,onMint,on
         }}>📋 COPY LINK</button>
       </div>
 
+      {/* Cancel Modal */}
+      {cancelModal&&<CancelModal
+        modal={cancelModal}
+        tickets={activeTickets.filter(t=>t.poolId?.startsWith(cancelModal.periodId+"-"))}
+        pools={POOLS}
+        ethPrice={ethPrice}
+        onClose={()=>setCancelModal(null)}
+        onConfirm={(ids)=>{
+          // Remove cancelled tickets from state
+          // In production: call WheelPool.cancelTicket() per ticket
+          const newTickets=tickets.filter(t=>!ids.includes(t.id));
+          // Update parent tickets state via prop
+          setCancelModal(null);
+          alert(`${ids.length} ticket${ids.length>1?"s":""} cancelled. In production this would call the smart contract.`);
+        }}
+      />}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   CANCEL MODAL
+══════════════════════════════════════════════ */
+function CancelModal({modal,tickets,pools,ethPrice,onClose,onConfirm}){
+  const[selected,setSelected]=useState(tickets.map(t=>t.id));
+
+  const CANCEL_REFUND_PCT   = 78;
+  const CANCEL_WHEELPOT_PCT = 2;
+  const CANCEL_TREASURY_PCT = 20;
+
+  const toggle=(id)=>setSelected(s=>
+    s.includes(id) ? s.filter(x=>x!==id) : [...s,id]
+  );
+  const selectAll =()=>setSelected(tickets.map(t=>t.id));
+  const deselectAll=()=>setSelected([]);
+
+  // Compute fees for selected tickets
+  const selectedTickets=tickets.filter(t=>selected.includes(t.id));
+  const totalEth=selectedTickets.reduce((sum,t)=>{
+    const pid=t.poolId?.split("-")[0]||"h1";
+    const nominalUsd=parseInt(t.poolId?.split("-")[1]||"2");
+    return sum+(nominalUsd/ethPrice);
+  },0);
+  const refundEth  =(totalEth*CANCEL_REFUND_PCT/100).toFixed(6);
+  const wheelPotEth=(totalEth*CANCEL_WHEELPOT_PCT/100).toFixed(6);
+  const treasuryEth=(totalEth*CANCEL_TREASURY_PCT/100).toFixed(6);
+  const refundUsd  =(parseFloat(refundEth)*ethPrice).toFixed(2);
+
+  const PERIOD_LABELS={"h1":"HOURLY","d1":"DAILY","w1":"WEEKLY"};
+
+  return(
+    <div style={{
+      position:"fixed",inset:0,background:"rgba(0,0,0,.88)",
+      display:"flex",alignItems:"center",justifyContent:"center",
+      zIndex:600,padding:"20px",
+    }} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{
+        background:"#0e2a0e",border:"2px solid #FF6633",
+        padding:"24px",maxWidth:480,width:"100%",
+        maxHeight:"85vh",overflowY:"auto",
+        boxShadow:"0 0 40px rgba(255,102,51,.3)",
+        fontFamily:"'Press Start 2P',monospace",
+      }}>
+        {/* Header */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <div>
+            <div style={{color:"#FF6633",fontSize:11,marginBottom:4}}>
+              {modal.periodIcon} CANCEL {modal.periodLabel} TICKETS
+            </div>
+            <div style={{color:"#9de8b4",fontSize:9,fontFamily:"'VT323',monospace"}}>
+              22% cancellation fee · 78% refunded
+            </div>
+          </div>
+          <button onClick={onClose} style={{
+            background:"transparent",color:"#FF4444",border:"1px solid #FF4444",
+            width:28,height:28,cursor:"pointer",fontSize:14,outline:"none",
+          }}>✕</button>
+        </div>
+
+        {/* Fee breakdown banner */}
+        <div style={{
+          background:"#1a0800",border:"1px solid #FF663344",
+          padding:"10px 14px",marginBottom:16,
+          display:"flex",gap:0,flexWrap:"wrap",
+        }}>
+          {[
+            ["REFUND","78%","#44FF44"],
+            ["WHEELPOT","2%","#FFD700"],
+            ["TREASURY","20%","#FF6633"],
+          ].map(([l,v,c])=>(
+            <div key={l} style={{flex:"1 1 80px",textAlign:"center",padding:"4px 0"}}>
+              <div style={{color:"#9de8b4",fontSize:8,marginBottom:3}}>{l}</div>
+              <div style={{color:c,fontSize:16,fontFamily:"'VT323',monospace"}}>{v}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Select all / none */}
+        <div style={{display:"flex",gap:8,marginBottom:12}}>
+          <button onClick={selectAll} style={{
+            background:"#0a2010",color:"#44FF44",border:"1px solid #44FF4444",
+            padding:"5px 10px",cursor:"pointer",fontSize:8,outline:"none",
+          }}>SELECT ALL</button>
+          <button onClick={deselectAll} style={{
+            background:"#0a2010",color:"#9de8b4",border:"1px solid #44FF4422",
+            padding:"5px 10px",cursor:"pointer",fontSize:8,outline:"none",
+          }}>DESELECT ALL</button>
+          <span style={{color:"#9de8b4",fontSize:10,fontFamily:"'VT323',monospace",marginLeft:"auto",alignSelf:"center"}}>
+            {selected.length}/{tickets.length} selected
+          </span>
+        </div>
+
+        {/* Ticket list */}
+        <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
+          {tickets.length===0?(
+            <div style={{color:"#6aaa6a",fontSize:9,textAlign:"center",padding:16}}>
+              No tickets in this period
+            </div>
+          ):tickets.map(t=>{
+            const nominalUsd=parseInt(t.poolId?.split("-")[1]||"2");
+            const entryEth=(nominalUsd/ethPrice).toFixed(6);
+            const isSelected=selected.includes(t.id);
+            const ts=new Date(t.ts);
+            return(
+              <div
+                key={t.id}
+                onClick={()=>toggle(t.id)}
+                style={{
+                  display:"flex",alignItems:"center",gap:10,
+                  background:isSelected?"#1a0a0a":"#0a1a0a",
+                  border:`1px solid ${isSelected?"#FF6633":"#2a5a2a"}`,
+                  padding:"10px 12px",cursor:"pointer",
+                  transition:"all .15s",
+                }}>
+                {/* Checkbox */}
+                <div style={{
+                  width:18,height:18,border:`2px solid ${isSelected?"#FF6633":"#44FF44"}`,
+                  background:isSelected?"#FF6633":"transparent",
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  flexShrink:0,fontSize:12,
+                }}>
+                  {isSelected&&"✓"}
+                </div>
+                {/* Ticket info */}
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{color:"#9de8b4",fontSize:9,marginBottom:2}}>{t.id}</div>
+                  <div style={{color:"#6aaa6a",fontSize:8,fontFamily:"monospace"}}>
+                    {ts.toLocaleDateString("en-GB")} {ts.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}
+                  </div>
+                </div>
+                {/* Amount */}
+                <div style={{textAlign:"right",flexShrink:0}}>
+                  <div style={{color:"#FF6633",fontSize:14,fontFamily:"'VT323',monospace"}}>${nominalUsd}</div>
+                  <div style={{color:"#9de8b4",fontSize:8,fontFamily:"'VT323',monospace"}}>{entryEth} ETH</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Refund summary */}
+        {selected.length>0&&(
+          <div style={{
+            background:"#0a1a0a",border:"1px solid #44FF4433",
+            padding:"12px 14px",marginBottom:16,
+          }}>
+            <div style={{color:"#FFDD00",fontSize:9,marginBottom:10}}>CANCELLATION SUMMARY</div>
+            {[
+              ["TICKETS",`${selected.length} selected`,"#9de8b4"],
+              ["TOTAL VALUE",`${totalEth.toFixed(6)} ETH`,"#9de8b4"],
+              ["YOU RECEIVE",`${refundEth} ETH (~$${refundUsd})`,"#44FF44"],
+              ["→ WHEELPOT",`${wheelPotEth} ETH`,"#FFD700"],
+              ["→ TREASURY",`${treasuryEth} ETH`,"#FF6633"],
+            ].map(([l,v,c])=>(
+              <div key={l} style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                <span style={{color:"#6aaa6a",fontSize:8}}>{l}</span>
+                <span style={{color:c,fontSize:9,fontFamily:"'VT323',monospace"}}>{v}</span>
+              </div>
+            ))}
+            <div style={{
+              marginTop:8,paddingTop:8,borderTop:"1px solid #FF663322",
+              color:"#9de8b4",fontSize:8,lineHeight:2,
+            }}>
+              ⚠ WheelPot tickets are kept regardless of cancellation.
+              Cannot cancel within 10 minutes of draw time.
+            </div>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div style={{display:"flex",gap:8}}>
+          <button
+            onClick={()=>selected.length>0&&onConfirm(selected)}
+            disabled={selected.length===0}
+            style={{
+              flex:1,padding:"12px 0",
+              background:selected.length>0?"#2a0808":"#0a0a0a",
+              color:selected.length>0?"#FF4444":"#333",
+              border:`1px solid ${selected.length>0?"#FF4444":"#222"}`,
+              cursor:selected.length>0?"pointer":"default",
+              fontSize:9,outline:"none",
+              borderBottom:selected.length>0?"3px solid #FF6633":"3px solid #222",
+            }}>
+            {selected.length>0
+              ?`CANCEL ${selected.length} TICKET${selected.length>1?"S":""} →`
+              :"SELECT TICKETS"}
+          </button>
+          <button onClick={onClose} style={{
+            flex:1,padding:"12px 0",
+            background:"transparent",color:"#9de8b4",
+            border:"1px solid #2a5a2a",
+            cursor:"pointer",fontSize:9,outline:"none",
+          }}>KEEP TICKETS</button>
+        </div>
+      </div>
     </div>
   );
 }
