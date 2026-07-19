@@ -206,3 +206,15 @@ button, a, [role="button"] { outline: none; }
     top: 60% !important;
   }
 }
+
+/* ── Splash screen loading bar ──────────────── */
+@keyframes splashLoad {
+  0%   { width: 0%; }
+  100% { width: 100%; }
+}
+
+/* ── Compact wallet desktop only ────────────── */
+.compact-wallet-desktop { display: flex; align-items: center; }
+@media (max-width: 600px) {
+  .compact-wallet-desktop { display: none !important; }
+}
