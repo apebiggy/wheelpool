@@ -637,6 +637,76 @@ function TicketSections({tickets,ethPrice,onMint,onDraw,msLeft,fmtMs}){
 
 
 /* ══════════════════════════════════════════════
+   COMPACT WALLET — shown inline next to logo
+══════════════════════════════════════════════ */
+function CompactWallet(){
+  const {login,logout}=useLoginWithAbstract();
+  const {address,status,connector}=useAccount();
+  const {connect}=useConnect();
+  const {disconnect}=useDisconnect();
+  const {data:balance}=useBalance({address});
+  const isConnected=status==="connected"&&!!address;
+  const isAGW=connector?.id==="abstract";
+  const eth=balance?parseFloat(formatUnits(balance.value,balance.decimals)).toFixed(3):"0.000";
+  const short=a=>`${a.slice(0,5)}...${a.slice(-3)}`;
+
+  if(isConnected&&address){
+    return(
+      <div style={{
+        background:"#0d4a1e",border:"1px solid #44FF4466",
+        color:"#44FF44",padding:"4px 10px",
+        fontSize:"clamp(8px,1.8vw,10px)",
+        fontFamily:"'Press Start 2P',monospace",
+        whiteSpace:"nowrap",lineHeight:1.6,
+      }}>
+        <div>{short(address)}</div>
+        <div style={{color:"#9de8b4",fontSize:"clamp(7px,1.5vw,9px)"}}>{eth} ETH</div>
+      </div>
+    );
+  }
+  return null; // not connected — burger menu shows connect button
+}
+
+/* ══════════════════════════════════════════════
+   BURGER WALLET — connect/disconnect in burger menu
+══════════════════════════════════════════════ */
+function BurgerWallet({onClose}){
+  const {login,logout}=useLoginWithAbstract();
+  const {address,status,connector}=useAccount();
+  const {connect}=useConnect();
+  const {disconnect}=useDisconnect();
+  const isConnected=status==="connected"&&!!address;
+  const isAGW=connector?.id==="abstract";
+  const short=a=>`${a.slice(0,6)}...${a.slice(-4)}`;
+
+  if(isConnected&&address){
+    return(
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+        <div>
+          <div style={{color:"#44FF44",fontSize:9,fontFamily:"'Press Start 2P',monospace",marginBottom:3}}>CONNECTED</div>
+          <div style={{color:"#9de8b4",fontSize:10,fontFamily:"monospace"}}>{short(address)}</div>
+        </div>
+        <button onClick={()=>{disconnect();if(isAGW)logout();onClose();}} style={{
+          background:"#2a0808",color:"#FF4444",border:"1px solid #FF4444",
+          padding:"7px 12px",cursor:"pointer",fontSize:9,
+          fontFamily:"'Press Start 2P',monospace",outline:"none",flexShrink:0,
+        }}>LOG OUT</button>
+      </div>
+    );
+  }
+  return(
+    <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+      <button onClick={()=>{connect({connector:abstractWalletConnector()});onClose();}} style={{
+        flex:1,background:"#0d4a1e",color:"#1BF26A",
+        border:"2px solid #1BF26A",padding:"10px",cursor:"pointer",
+        fontSize:10,fontFamily:"'Press Start 2P',monospace",outline:"none",
+      }}>⚡ CONNECT AGW</button>
+    </div>
+  );
+}
+
+
+/* ══════════════════════════════════════════════
    WALLET SECTION (used in Profile tab)
 ══════════════════════════════════════════════ */
 function WalletSection(){
@@ -1148,6 +1218,8 @@ export default function WheelPool(){
   const[priceLoading,setPriceLoading]=useState(false);
   const[mounted,setMounted]=useState(false);
   useEffect(()=>setMounted(true),[]);
+  const[burgerOpen,setBurgerOpen]=useState(false);
+  const[wheelPotBalance,setWheelPotBalance]=useState(0.847); // mock — replace with contract read
   const[selectedPeriod,setSelectedPeriod]=useState("h1");
   const[wheelPoints,setWheelPoints]=useState(0);
   const[activePerks,setActivePerks]=useState([]);
@@ -1185,24 +1257,66 @@ export default function WheelPool(){
       WebkitPosition:"sticky",
     }}>
 
-      {/* Row 1: 3-column — left empty/spacer | center: logo | right: eth + wallet + X */}
-      <div style={{display:"flex",alignItems:"center",padding:"10px 14px",gap:6}}>
+      {/* Row 1: Logo | Compact wallet | Burger */}
+      <div style={{display:"flex",alignItems:"center",padding:"8px 14px",gap:10,position:"relative"}}>
 
-        <div className="header-logo" onClick={()=>setNav("home")} style={{flex:"1 1 auto",display:"flex",justifyContent:"center",alignItems:"center",cursor:"pointer",fontSize:"clamp(20px,4vw,40px)",letterSpacing:2,lineHeight:1.2,whiteSpace:"nowrap",order:1,textAlign:"center"}}>
+        {/* Logo — compact */}
+        <div onClick={()=>setNav("home")} style={{
+          cursor:"pointer",fontSize:"clamp(14px,2.5vw,22px)",
+          letterSpacing:1,lineHeight:1,whiteSpace:"nowrap",flexShrink:0,
+        }}>
           <span style={{color:"#FFDD00"}}>Wheel</span><span style={{color:"#44FF44"}}>Pool</span>
         </div>
 
-                <div className="header-wallet" style={{flex:"0 0 auto",display:"flex",alignItems:"center",gap:6,justifyContent:"flex-end",order:2}}>
-          {wheelPoints>0&&<div className="wallet-balance" style={{
-            background:"#1a1600",border:"1px solid #FFDD00",
-            color:"#FFDD00",padding:"4px 8px",
-            fontSize:"clamp(7px,1.6vw,9px)",
-            fontFamily:"'Press Start 2P',monospace",
-            whiteSpace:"nowrap",
-          }}>🎡 {wheelPoints.toLocaleString()}</div>}
-          <ConnectButton/>
-        </div>
+        {/* Compact wallet — right next to logo */}
+        <CompactWallet/>
+
+        <div style={{flex:1}}/>
+
+        {/* Burger button */}
+        <button onClick={()=>setBurgerOpen(o=>!o)} style={{
+          background:burgerOpen?"#1a3a14":"transparent",
+          border:"1px solid #1BF26A44",color:"#1BF26A",
+          width:36,height:36,cursor:"pointer",flexShrink:0,
+          display:"flex",flexDirection:"column",alignItems:"center",
+          justifyContent:"center",gap:4,outline:"none",padding:"6px 8px",
+        }}>
+          <div style={{width:16,height:2,background:"#1BF26A"}}/>
+          <div style={{width:16,height:2,background:"#1BF26A"}}/>
+          <div style={{width:16,height:2,background:"#1BF26A"}}/>
+        </button>
+
       </div>
+
+      {/* Burger dropdown */}
+      {burgerOpen&&<div style={{
+        position:"absolute",top:"100%",right:0,left:0,
+        background:"#061406",border:"1px solid #1BF26A33",
+        borderTop:"2px solid #1BF26A",zIndex:400,
+        boxShadow:"0 8px 32px rgba(0,0,0,.8)",
+      }}>
+        <div style={{padding:"14px 16px",borderBottom:"1px solid #1a4a1a"}}>
+          <BurgerWallet onClose={()=>setBurgerOpen(false)}/>
+        </div>
+        {[
+          {icon:"🏪",label:"MARKETPLACE",   action:()=>{setNav("market");setBurgerOpen(false);}},
+          {icon:"🏆",label:"LEADERBOARD",   action:()=>{setNav("leaderboard");setBurgerOpen(false);}},
+          {icon:"📖",label:"HOW IT WORKS",  action:()=>{setNav("how");setBurgerOpen(false);}},
+          {icon:"𝕏", label:"TWITTER / X",   action:()=>{typeof window!=="undefined"&&window.open("https://x.com/wheelpool","_blank");}},
+          {icon:"📚",label:"GITBOOK DOCS",  action:()=>{typeof window!=="undefined"&&window.open("https://docs.wheelpool.xyz","_blank");}},
+        ].map(item=>(
+          <button key={item.label} onClick={item.action} style={{
+            display:"flex",alignItems:"center",gap:12,width:"100%",
+            background:"none",border:"none",borderBottom:"1px solid #1a4a1a",
+            color:"#9de8b4",padding:"12px 16px",cursor:"pointer",
+            fontSize:9,fontFamily:"'Press Start 2P',monospace",
+            textAlign:"left",outline:"none",
+          }}>
+            <span style={{fontSize:14,width:20,textAlign:"center"}}>{item.icon}</span>
+            {item.label}
+          </button>
+        ))}
+      </div>}
 
       {/* Row 2: nav — full width, equal tabs */}
       <nav style={{
@@ -1210,8 +1324,8 @@ export default function WheelPool(){
         borderTop:"1px solid rgba(27,242,106,.22)",
         background:"rgba(8,50,8,.6)",
       }}>
-        {[["home","🎡","POOLS"],["tickets","👤","PROFILE"],["market","🏪","MARKET"],["how","📖","HOW"]].map(([k,emoji,label])=>(
-          <button key={k} onClick={()=>setNav(k)} className="nav-item" style={{
+        {[["home","🎡","POOLS"],["draw","🎲","DRAW ROOM"],["profile","👤","MY PROFILE"]].map(([k,emoji,label])=>(
+          <button key={k} onClick={()=>k==="draw"?setDrawPool(POOLS[0]):setNav(k)} className="nav-item" style={{
             flex:1,
             background:"none",border:"none",cursor:"pointer",
             color:nav===k?"#FFDD00":"#9de8b4",
@@ -1241,6 +1355,64 @@ export default function WheelPool(){
         <div className="hero-wheel" style={{position:"absolute",top:"52%",left:"50%",transform:"translate(-50%, -50%)",zIndex:3}}>
           <InteractiveWheel size={wheelSize}/>
         </div>
+
+        {/* ── WheelPot Live Banner ── */}
+        <div style={{
+          position:"absolute",
+          bottom:0,left:0,right:0,
+          zIndex:4,
+          background:"linear-gradient(90deg,rgba(0,0,0,0) 0%,rgba(0,0,0,0.7) 20%,rgba(0,0,0,0.7) 80%,rgba(0,0,0,0) 100%)",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          padding:"14px 20px",gap:20,
+        }}>
+          {/* Left: animated slot icon */}
+          <div style={{
+            fontSize:"clamp(22px,4vw,32px)",
+            animation:"blinkAnim 2s ease-in-out infinite",
+          }}>🎰</div>
+
+          {/* Center: pot info */}
+          <div style={{textAlign:"center"}}>
+            <div style={{
+              color:"#FFD700",
+              fontSize:"clamp(10px,2vw,13px)",
+              fontFamily:"'Press Start 2P',monospace",
+              letterSpacing:2,marginBottom:4,
+            }}>WHEELPOT JACKPOT</div>
+            <div style={{
+              color:"#FFF8DC",
+              fontSize:"clamp(22px,5vw,38px)",
+              fontFamily:"'VT323',monospace",
+              lineHeight:1,
+              textShadow:"0 0 20px rgba(255,215,0,.8), 0 0 40px rgba(255,215,0,.4)",
+            }}>
+              {(wheelPotBalance).toFixed(4)} ETH
+              <span style={{
+                color:"#9de8b4",
+                fontSize:"clamp(14px,3vw,22px)",
+                marginLeft:10,
+              }}>
+                ~${Math.round(wheelPotBalance*ethPrice).toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          {/* Right: fire button or countdown */}
+          <div style={{textAlign:"center"}}>
+            <div style={{
+              color:"#FFD700",
+              fontSize:"clamp(8px,1.5vw,10px)",
+              fontFamily:"'Press Start 2P',monospace",
+              marginBottom:4,opacity:0.7,
+            }}>NEXT ELIGIBLE</div>
+            <div style={{
+              color:"#9de8b4",
+              fontSize:"clamp(12px,2.5vw,18px)",
+              fontFamily:"'VT323',monospace",
+            }}>30 DAYS AFTER DEPLOY</div>
+          </div>
+        </div>
+
       </section>
 
       {/* ── TITLE + CTA dark band directly below hero ── */}
@@ -1249,7 +1421,7 @@ export default function WheelPool(){
           WIN ETH ON <span style={{color:"#1BF26A",textShadow:"0 0 20px #1BF26A"}}>ABSTRACT CHAIN</span>
         </div>
         <div style={{color:"#c0f0d0",fontSize:"clamp(16px,4vw,20px)",marginBottom:24,fontFamily:"'Press Start 2P',monospace"}}>
-          Deposit · Auto draw · Instant payouts · Winners paid on-chain
+          Every draw. Every winner. Paid on-chain.
         </div>
         <div style={{display:"flex",justifyContent:"center",gap:12,flexWrap:"wrap"}}>
           <button onClick={()=>typeof document!=="undefined"&&document.getElementById("pools")?.scrollIntoView({behavior:"smooth"})}
@@ -1370,7 +1542,7 @@ export default function WheelPool(){
       </section>
     </>}
 
-    {nav==="tickets"&&<section style={{padding:"20px 20px",paddingTop:"130px",maxWidth:1060,margin:"0 auto"}}>
+    {(nav==="tickets"||nav==="profile")&&<section style={{padding:"20px 20px",paddingTop:"130px",maxWidth:1060,margin:"0 auto"}}>
       <MyProfile
         tickets={tickets}
         wheelPoints={wheelPoints}
@@ -1382,6 +1554,41 @@ export default function WheelPool(){
         ms={ms}
         fmtMs={fmtMs}
       />
+    </section>}
+    {nav==="leaderboard"&&<section style={{padding:"20px 20px",paddingTop:"130px",maxWidth:1060,margin:"0 auto"}}>
+      <h2 style={{textAlign:"center",fontSize:"clamp(20px,5vw,30px)",color:"#FFDD00",letterSpacing:2,marginBottom:6}}>🏆 POINTS LEADERBOARD</h2>
+      <div style={{textAlign:"center",color:"#c0f0d0",fontSize:"clamp(10px,2vw,14px)",marginBottom:28}}>Top WHEEL points holders globally</div>
+      <div style={{background:"#0a2a0a",border:"1px solid #2a7a22"}}>
+        <div style={{display:"flex",padding:"10px 16px",borderBottom:"2px solid #2a7a22",gap:8}}>
+          <span style={{color:"#6aaa6a",fontSize:9,fontFamily:"'Press Start 2P',monospace",width:32}}>RANK</span>
+          <span style={{color:"#6aaa6a",fontSize:9,fontFamily:"'Press Start 2P',monospace",flex:1}}>WALLET</span>
+          <span style={{color:"#6aaa6a",fontSize:9,fontFamily:"'Press Start 2P',monospace"}}>PTS</span>
+          <span style={{color:"#6aaa6a",fontSize:9,fontFamily:"'Press Start 2P',monospace"}}>LEVEL</span>
+        </div>
+        {[
+          {rank:1, addr:"0xa0b1...c2d3", pts:12450, level:"LEGEND",  icon:"👑"},
+          {rank:2, addr:"0xf4e5...a6b7", pts:8230,  level:"ELITE",   icon:"💎"},
+          {rank:3, addr:"0xa1b2...c3d4", pts:5100,  level:"ELITE",   icon:"💎"},
+          {rank:4, addr:"0xb3c4...d5e6", pts:3800,  level:"PRO",     icon:"🔥"},
+          {rank:5, addr:"0xd5e6...e7f8", pts:2940,  level:"PRO",     icon:"🔥"},
+          {rank:6, addr:"0xe7f8...f9a0", pts:1820,  level:"PLAYER",  icon:"⚡"},
+          {rank:7, addr:"0x1234...5678", pts:1200,  level:"PLAYER",  icon:"⚡"},
+          {rank:8, addr:"0x9abc...def0", pts:890,   level:"PLAYER",  icon:"⚡"},
+          {rank:9, addr:"0x2468...1357", pts:620,   level:"PLAYER",  icon:"⚡"},
+          {rank:10,addr:"0xaced...bef0", pts:410,   level:"ROOKIE",  icon:"🎡"},
+        ].map((row,i)=>(
+          <div key={row.rank} style={{
+            display:"flex",alignItems:"center",padding:"12px 16px",gap:8,
+            borderBottom:"1px solid #1a4a1a",
+            background:row.rank<=3?`rgba(255,215,0,${0.05-i*0.01})`:"transparent",
+          }}>
+            <span style={{color:row.rank===1?"#FFD700":row.rank===2?"#C0C0C0":row.rank===3?"#CD7F32":"#6aaa6a",fontSize:row.rank<=3?14:10,fontFamily:"'VT323',monospace",width:32,flexShrink:0}}>{row.rank<=3?"◆":row.rank}</span>
+            <span style={{color:"#9de8b4",fontSize:10,fontFamily:"monospace",flex:1}}>{row.addr}</span>
+            <span style={{color:"#FFDD00",fontSize:16,fontFamily:"'VT323',monospace",minWidth:60,textAlign:"right"}}>{row.pts.toLocaleString()}</span>
+            <span style={{fontSize:12,marginLeft:6}}>{row.icon}</span>
+          </div>
+        ))}
+      </div>
     </section>}
     {nav==="market"&&<section style={{padding:"20px 20px",paddingTop:"130px",maxWidth:1060,margin:"0 auto"}}>
       <h2 style={{textAlign:"center",fontSize:"clamp(20px,5vw,30px)",color:"#FFDD00",letterSpacing:2,marginBottom:6}}>🏪 WHEEL MARKET</h2>
@@ -1399,6 +1606,46 @@ export default function WheelPool(){
         </div>
       </div>
       <WheelMarketplace points={wheelPoints} activePerks={activePerks} onSpend={spendPoints} onActivate={activatePerk} pools={POOLS} ethPrice={ethPrice} onMint={p=>setMintPool(p)}/>
+    </section>}
+    {nav==="leaderboard"&&<section style={{padding:"20px 20px",paddingTop:"130px",maxWidth:1060,margin:"0 auto"}}>
+      <h2 style={{textAlign:"center",fontSize:"clamp(20px,5vw,30px)",color:"#FFDD00",letterSpacing:2,marginBottom:6}}>🏆 GLOBAL LEADERBOARD</h2>
+      <div style={{textAlign:"center",color:"#c0f0d0",fontSize:"clamp(10px,2vw,13px)",marginBottom:24}}>Top WHEEL points earners across all pools</div>
+      <div style={{background:"#0a2a0a",border:"1px solid #2a5a2a",overflow:"hidden"}}>
+        {/* Header row */}
+        <div style={{display:"flex",gap:0,background:"#145414",borderBottom:"2px solid #2a5a2a",padding:"10px 16px"}}>
+          {["RANK","WALLET","POINTS","ENTRIES","WINNINGS"].map((h,i)=>(
+            <div key={h} style={{flex:i===1?2:1,color:"#FFDD00",fontSize:9,fontFamily:"'Press Start 2P',monospace"}}>{h}</div>
+          ))}
+        </div>
+        {/* Mock leaderboard rows */}
+        {[
+          {rank:1,addr:"0xa0b1...c2d3",pts:12450,entries:87,eth:"0.842",icon:"🥇"},
+          {rank:2,addr:"0xf4e5...g6h7",pts:9230, entries:64,eth:"0.614",icon:"🥈"},
+          {rank:3,addr:"0xa1b2...c3d4",pts:7840, entries:52,eth:"0.521",icon:"🥉"},
+          {rank:4,addr:"0xb3c4...d5e6",pts:6120, entries:43,eth:"0.380",icon:"4️⃣"},
+          {rank:5,addr:"0xd5e6...e7f8",pts:4890, entries:38,eth:"0.290",icon:"5️⃣"},
+          {rank:6,addr:"0xe7f8...f9a0",pts:3670, entries:29,eth:"0.169",icon:"6️⃣"},
+          {rank:7,addr:"0x1234...5678",pts:2840, entries:22,eth:"0.127",icon:"7️⃣"},
+          {rank:8,addr:"0x9abc...def0",pts:1920, entries:16,eth:"0.084",icon:"8️⃣"},
+          {rank:9,addr:"0x2468...1357",pts:1250, entries:11,eth:"0.051",icon:"9️⃣"},
+          {rank:10,addr:"0xaced...bef0",pts:840,  entries:8, eth:"0.025",icon:"🔟"},
+        ].map((row,i)=>(
+          <div key={row.rank} style={{
+            display:"flex",gap:0,padding:"12px 16px",
+            borderBottom:"1px solid #1a4a1a",
+            background:i%2===0?"#0a2a0a":"#0d3010",
+          }}>
+            <div style={{flex:1,fontSize:14,fontFamily:"'VT323',monospace"}}>{row.icon}</div>
+            <div style={{flex:2,color:"#9de8b4",fontSize:10,fontFamily:"monospace"}}>{row.addr}</div>
+            <div style={{flex:1,color:"#FFDD00",fontSize:14,fontFamily:"'VT323',monospace"}}>{row.pts.toLocaleString()}</div>
+            <div style={{flex:1,color:"#9de8b4",fontSize:14,fontFamily:"'VT323',monospace"}}>{row.entries}</div>
+            <div style={{flex:1,color:"#44FF44",fontSize:14,fontFamily:"'VT323',monospace"}}>{row.eth} ETH</div>
+          </div>
+        ))}
+      </div>
+      <div style={{textAlign:"center",marginTop:14,color:"#6aaa6a",fontSize:8,fontFamily:"'Press Start 2P',monospace",lineHeight:2}}>
+        Leaderboard updates after each draw · Live on-chain when contracts deploy
+      </div>
     </section>}
     {nav==="how"&&<section style={{padding:"20px 20px",paddingTop:"130px",background:"#0d4a1e"}}>
       <div style={{maxWidth:900,margin:"0 auto"}}>
